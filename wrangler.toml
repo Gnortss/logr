@@ -1,0 +1,10 @@
+name = "logr"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "./build/client"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "logr-db"
+database_id = "4985940f-04d9-4bc1-900e-83a3997cb378"
+migrations_dir = "db/migrations"
