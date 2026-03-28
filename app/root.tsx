@@ -13,7 +13,7 @@ export function meta() {
   return [
     { title: "Logr" },
     { name: "description", content: "Mobile-first daily metrics tracker" },
-    { name: "theme-color", content: "#9b8ec4" },
+    { name: "theme-color", content: "#334537" },
   ];
 }
 
@@ -23,6 +23,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <Meta />
         <Links />
       </head>
@@ -44,7 +47,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center p-4">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-accent mb-2">{error.status}</h1>
+          <h1 className="text-4xl font-bold text-primary font-heading mb-2">{error.status}</h1>
           <p className="text-text-muted">{error.statusText || "Page not found"}</p>
         </div>
       </div>
@@ -54,7 +57,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center p-4">
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-danger mb-2">Error</h1>
+        <h1 className="text-4xl font-bold text-danger font-heading mb-2">Error</h1>
         <p className="text-text-muted">Something went wrong</p>
       </div>
     </div>

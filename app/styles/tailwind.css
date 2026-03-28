@@ -1,46 +1,28 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --color-pastel-lavender: #c4b5e0;
-  --color-pastel-mint: #a8d8c8;
-  --color-pastel-peach: #f5c6aa;
-  --color-pastel-sky: #a8d4e6;
-  --color-pastel-rose: #e8b4b8;
-  --color-accent: #9b8ec4;
-  --color-accent-dark: #7b6fa0;
-  --color-bg: #faf8f5;
+  --font-heading: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --color-primary: #334537;
+  --color-primary-container: #4a5d4e;
+  --color-primary-fixed: #d3e8d5;
+  --color-primary-fixed-dim: #b7ccb9;
+  --color-bg: #fbf9f5;
   --color-bg-card: #ffffff;
-  --color-text: #2d2d2d;
-  --color-text-muted: #6b6b6b;
-  --color-border: #e8e4e0;
-  --color-success: #7bc47f;
-  --color-danger: #d4726a;
-}
-
-@media (prefers-color-scheme: dark) {
-  @theme {
-    --color-accent: #a899cc;
-    --color-accent-dark: #8a7ab0;
-    --color-bg: #1a1a2e;
-    --color-bg-card: #242440;
-    --color-text: #e0dce8;
-    --color-text-muted: #9a96a6;
-    --color-border: #3a3650;
-    --color-success: #5a9e5e;
-    --color-danger: #c45a52;
-    --color-pastel-lavender: #6b5e8a;
-    --color-pastel-mint: #4a7a6a;
-    --color-pastel-peach: #8a6a52;
-    --color-pastel-sky: #4a7a8a;
-    --color-pastel-rose: #8a5a60;
-  }
-}
-
-html,
-body {
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
-  }
+  --color-surface-dim: #dbdad6;
+  --color-surface-container: #efeeea;
+  --color-surface-container-low: #f5f3ef;
+  --color-surface-container-high: #eae8e4;
+  --color-surface-container-highest: #e4e2de;
+  --color-text: #1b1c1a;
+  --color-text-muted: #434843;
+  --color-outline: #737872;
+  --color-outline-variant: #c3c8c1;
+  --color-success: #334537;
+  --color-danger: #ba1a1a;
+  --color-secondary: #5b6054;
+  --color-secondary-container: #dde2d3;
+  --color-tertiary: #464136;
+  --color-tertiary-container: #5e584c;
 }
