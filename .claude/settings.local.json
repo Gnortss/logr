@@ -10,7 +10,11 @@
       "Bash(npm install:*)",
       "Bash(npm run:*)",
       "Bash(git add:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(npx drizzle-kit:*)",
+      "Bash(npx wrangler:*)",
+      "Bash(npx vitest:*)",
+      "Bash(node:*)"
     ]
   }
 }
