@@ -1,15 +1,21 @@
 import {
-  isRouteErrorResponse,
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
+  isRouteErrorResponse,
 } from "react-router";
-
 import type { Route } from "./+types/root";
 import "./styles/tailwind.css";
 
+export function meta() {
+  return [
+    { title: "Logr" },
+    { name: "description", content: "Mobile-first daily metrics tracker" },
+    { name: "theme-color", content: "#9b8ec4" },
+  ];
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -20,7 +26,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body className="bg-bg text-text font-sans antialiased">
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -34,30 +40,23 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
-  let stack: string | undefined;
-
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
-    details =
-      error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message;
-    stack = error.stack;
+    return (
+      <div className="min-h-screen bg-bg flex items-center justify-center p-4">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-accent mb-2">{error.status}</h1>
+          <p className="text-text-muted">{error.statusText || "Page not found"}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
-          <code>{stack}</code>
-        </pre>
-      )}
-    </main>
+    <div className="min-h-screen bg-bg flex items-center justify-center p-4">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-danger mb-2">Error</h1>
+        <p className="text-text-muted">Something went wrong</p>
+      </div>
+    </div>
   );
 }

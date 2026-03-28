@@ -9,3 +9,5 @@
 
 # Wrangler
 .wrangler/
+.mf/
+*.local
