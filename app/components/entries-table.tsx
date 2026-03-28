@@ -13,7 +13,7 @@ export function EntriesTable({ entries, metricId, type, unit }: EntriesTableProp
   const sorted = [...entries].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
-    <div className="divide-y divide-border">
+    <div className="flex flex-col gap-2">
       {sorted.map((entry) => (
         <EntryRow key={entry.date} entry={entry} metricId={metricId} type={type} unit={unit} />
       ))}
@@ -46,7 +46,7 @@ function EntryRow({ entry, metricId, type, unit }: {
   }
 
   return (
-    <div className="flex items-center py-2 px-1 min-h-[44px]">
+    <div className="flex items-center py-3 px-4 min-h-[44px] bg-surface-container-low rounded-lg">
       <span className="text-sm text-text-muted w-28">{formatDateDisplay(entry.date)}</span>
       {editing ? (
         <div className="flex items-center gap-2 flex-1 justify-end">
@@ -54,8 +54,8 @@ function EntryRow({ entry, metricId, type, unit }: {
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSave()}
             autoFocus
-            className="w-20 px-2 py-1 rounded border border-border bg-bg text-text text-right text-sm" />
-          <button onClick={handleSave} className="text-sm text-accent font-medium">Save</button>
+            className="w-20 px-3 py-1 rounded-lg bg-surface-container-high text-text text-right text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+          <button onClick={handleSave} className="text-sm text-primary font-medium">Save</button>
           <button onClick={() => setEditing(false)} className="text-sm text-text-muted">Cancel</button>
         </div>
       ) : (
