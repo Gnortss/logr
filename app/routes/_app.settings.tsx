@@ -103,21 +103,21 @@ export default function SettingsView() {
   return (
     <div className="p-4 space-y-8">
       <div>
-        <Link to="/" className="text-accent text-sm font-medium">← Back</Link>
+        <Link to="/" className="text-primary text-sm font-semibold font-heading">← Back</Link>
       </div>
 
       <section>
-        <h2 className="text-lg font-semibold text-text mb-3">Metrics</h2>
-        <div className="space-y-2">
+        <h2 className="text-lg font-semibold font-heading text-text mb-3">Metrics</h2>
+        <div className="space-y-3">
           {activeMetrics.map((m) => (
-            <div key={m.id} className="flex items-center justify-between bg-bg-card rounded-xl border border-border px-4 py-3">
-              <div>
+            <div key={m.id} className="flex items-center justify-between bg-bg-card rounded-xl px-4 py-3">
+              <div className="flex items-center gap-2">
                 <span className="text-text font-medium">{m.name}</span>
-                <span className="text-xs text-text-muted ml-2">{m.type}</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-secondary-container text-secondary font-medium">{m.type}</span>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => setEditingMetric(m)}
-                  className="text-xs text-accent font-medium min-h-[36px] px-2">Edit</button>
+                  className="text-xs text-primary font-medium min-h-[36px] px-2">Edit</button>
                 <fetcher.Form method="post">
                   <input type="hidden" name="intent" value="archive-metric" />
                   <input type="hidden" name="metricId" value={m.id} />
@@ -140,15 +140,15 @@ export default function SettingsView() {
 
         {archivedMetrics.length > 0 && (
           <div className="mt-4">
-            <h3 className="text-sm font-medium text-text-muted mb-2">Archived</h3>
-            <div className="space-y-2">
+            <h3 className="text-sm font-medium font-heading text-text-muted mb-2">Archived</h3>
+            <div className="space-y-3">
               {archivedMetrics.map((m) => (
-                <div key={m.id} className="flex items-center justify-between bg-bg-card rounded-xl border border-border px-4 py-3 opacity-60">
+                <div key={m.id} className="flex items-center justify-between bg-bg-card rounded-xl px-4 py-3 opacity-60">
                   <span className="text-text">{m.name}</span>
                   <fetcher.Form method="post">
                     <input type="hidden" name="intent" value="unarchive-metric" />
                     <input type="hidden" name="metricId" value={m.id} />
-                    <button type="submit" className="text-xs text-accent font-medium min-h-[36px] px-2">Restore</button>
+                    <button type="submit" className="text-xs text-primary font-medium min-h-[36px] px-2">Restore</button>
                   </fetcher.Form>
                 </div>
               ))}
@@ -158,17 +158,17 @@ export default function SettingsView() {
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold text-text mb-3">API Key</h2>
+        <h2 className="text-lg font-semibold font-heading text-text mb-3">API Key</h2>
         <ApiKeySection apiKey={apiKey} />
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold text-text mb-3">Account</h2>
+        <h2 className="text-lg font-semibold font-heading text-text mb-3">Account</h2>
         <div className="space-y-3">
           <fetcher.Form method="post">
             <input type="hidden" name="intent" value="logout" />
             <button type="submit"
-              className="w-full py-3 bg-bg-card border border-border text-text font-medium rounded-xl min-h-[44px]">
+              className="w-full py-3 bg-surface-container-high text-text font-medium rounded-xl min-h-[44px]">
               Log Out
             </button>
           </fetcher.Form>
@@ -182,7 +182,7 @@ export default function SettingsView() {
             </fetcher.Form>
           ) : (
             <button onClick={() => setConfirmDeleteAccount(true)}
-              className="w-full py-3 border border-danger text-danger font-medium rounded-xl min-h-[44px]">
+              className="w-full py-3 text-danger font-medium rounded-xl min-h-[44px]">
               Delete Account
             </button>
           )}
@@ -222,18 +222,18 @@ function ApiKeySection({ apiKey }: { apiKey: { id: number; createdAt: string; la
   return (
     <div className="space-y-3">
       {newKey ? (
-        <div className="bg-bg rounded-xl border border-accent p-4">
+        <div className="bg-primary-fixed rounded-xl p-4">
           <p className="text-xs text-danger font-medium mb-2">
             Copy this key now — it won't be shown again.
           </p>
           <code className="text-sm text-text break-all block mb-3">{newKey}</code>
           <button onClick={copyKey}
-            className="px-4 py-2 bg-accent text-white rounded-lg text-sm font-medium min-h-[36px]">
+            className="px-4 py-2 bg-primary text-white rounded-full text-sm font-medium min-h-[36px]">
             {copied ? "Copied!" : "Copy to Clipboard"}
           </button>
         </div>
       ) : apiKey ? (
-        <div className="bg-bg-card rounded-xl border border-border p-4">
+        <div className="bg-bg-card rounded-xl p-4">
           <div className="text-sm text-text-muted mb-1">Active Key</div>
           <div className="text-sm text-text font-mono">logr_****...****</div>
           {apiKey.lastUsedAt && (
@@ -249,7 +249,7 @@ function ApiKeySection({ apiKey }: { apiKey: { id: number; createdAt: string; la
       <fetcher.Form method="post">
         <input type="hidden" name="intent" value={apiKey ? "rotate-api-key" : "generate-api-key"} />
         <button type="submit"
-          className="w-full py-3 bg-bg-card border border-border text-text font-medium rounded-xl min-h-[44px]">
+          className="w-full py-3 bg-surface-container-high text-text font-medium rounded-xl min-h-[44px]">
           {apiKey ? "Rotate Key" : "Generate API Key"}
         </button>
       </fetcher.Form>

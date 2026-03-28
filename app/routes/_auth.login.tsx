@@ -80,14 +80,14 @@ export default function LoginPage() {
 
   return (
     <>
-      <div className="flex mb-6">
+      <div className="flex mb-6 rounded-full overflow-hidden bg-surface-container-high">
         <button
           type="button"
           onClick={() => setMode("login")}
-          className={`flex-1 py-2 text-center font-medium rounded-l-lg transition-colors ${
+          className={`flex-1 py-2.5 text-center font-medium text-sm transition-colors ${
             mode === "login"
-              ? "bg-accent text-white"
-              : "bg-border text-text-muted"
+              ? "bg-primary text-white rounded-full"
+              : "text-text-muted"
           }`}
         >
           Log In
@@ -95,10 +95,10 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={() => setMode("signup")}
-          className={`flex-1 py-2 text-center font-medium rounded-r-lg transition-colors ${
+          className={`flex-1 py-2.5 text-center font-medium text-sm transition-colors ${
             mode === "signup"
-              ? "bg-accent text-white"
-              : "bg-border text-text-muted"
+              ? "bg-primary text-white rounded-full"
+              : "text-text-muted"
           }`}
         >
           Sign Up
@@ -111,19 +111,19 @@ export default function LoginPage() {
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-text mb-1">Email</label>
             <input id="email" name="email" type="email" required autoComplete="email"
-              className="w-full px-3 py-3 rounded-lg border border-border bg-bg text-text focus:outline-none focus:ring-2 focus:ring-accent" />
+              className="w-full px-3 py-3 rounded-lg bg-surface-container-high text-text placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-text mb-1">Password</label>
             <input id="password" name="password" type="password" required minLength={8}
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              className="w-full px-3 py-3 rounded-lg border border-border bg-bg text-text focus:outline-none focus:ring-2 focus:ring-accent" />
+              className="w-full px-3 py-3 rounded-lg bg-surface-container-high text-text placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           {actionData && "error" in actionData && (
             <p className="text-danger text-sm">{actionData.error}</p>
           )}
           <button type="submit" disabled={isSubmitting}
-            className="w-full py-3 bg-accent text-white font-medium rounded-lg hover:bg-accent-dark transition-colors disabled:opacity-50 min-h-[44px]">
+            className="w-full py-3 bg-primary text-white font-medium rounded-full hover:bg-primary-container transition-colors disabled:opacity-50 min-h-[44px]">
             {isSubmitting ? "..." : mode === "login" ? "Log In" : "Sign Up"}
           </button>
         </div>
