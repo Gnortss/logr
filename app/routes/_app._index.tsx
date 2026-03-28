@@ -169,7 +169,7 @@ function SortableMetricRow({ metric, entry, date }: { metric: any; entry: any; d
       <button
         {...attributes}
         {...listeners}
-        className="px-2 py-3 text-text-muted cursor-grab active:cursor-grabbing min-w-[32px] min-h-[44px] flex items-center"
+        className="px-2 py-3 text-outline-variant cursor-grab active:cursor-grabbing min-w-[32px] min-h-[44px] flex items-center"
         aria-label="Drag to reorder"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -226,25 +226,31 @@ export default function TodayView() {
 
       {orderedMetrics.length === 0 ? (
         <div className="p-8 text-center text-text-muted">
-          <p className="mb-2">No metrics yet.</p>
+          <p className="font-heading font-semibold mb-2">No metrics yet.</p>
           <p className="text-sm">Tap "Add Metric" below to get started.</p>
         </div>
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={orderedMetrics.map((m) => m.id)} strategy={verticalListSortingStrategy}>
-            <div className="divide-y divide-border">
-              {orderedMetrics.map((m) => (
-                <SortableMetricRow key={m.id} metric={m} entry={m.entry} date={date} />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
+        <div className="px-4 pt-2">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-heading font-semibold text-lg text-text">Core Metrics</h2>
+            <span className="text-sm text-text-muted">{orderedMetrics.filter(m => m.goal != null || m.type === 'boolean').length} active goals</span>
+          </div>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={orderedMetrics.map((m) => m.id)} strategy={verticalListSortingStrategy}>
+              <div className="flex flex-col gap-3">
+                {orderedMetrics.map((m) => (
+                  <SortableMetricRow key={m.id} metric={m} entry={m.entry} date={date} />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        </div>
       )}
 
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-bg">
         <button
           onClick={() => setShowAddForm(true)}
-          className="w-full py-3 bg-accent text-white font-medium rounded-xl hover:bg-accent-dark transition-colors min-h-[44px] max-w-lg mx-auto block"
+          className="w-full py-3 bg-primary text-white font-medium rounded-full hover:bg-primary-container transition-colors min-h-[44px] max-w-lg mx-auto block"
         >
           Add Metric
         </button>

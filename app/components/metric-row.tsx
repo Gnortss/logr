@@ -21,34 +21,45 @@ export function MetricRow({ metric, entry, date }: MetricRowProps) {
   return <NumericRow metric={metric} entry={entry} date={date} />;
 }
 
+function CheckCircle() {
+  return (
+    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+  );
+}
+
+function EmptyCircle() {
+  return (
+    <div className="w-8 h-8 rounded-full border-2 border-outline-variant flex-shrink-0" />
+  );
+}
+
 function BooleanRow({ metric, entry, date }: MetricRowProps) {
   const fetcher = useFetcher();
   const isChecked = entry?.value === 1;
   const optimisticChecked =
     fetcher.formData ? fetcher.formData.get("value") === "1" : isChecked;
 
+  const subtitle = optimisticChecked
+    ? `Goal Met`
+    : "Not tracked";
+
   return (
-    <div className="flex items-center px-4 py-3 min-h-[56px]">
-      <Link to={`/metrics/${metric.id}`} className="flex-1 text-text font-medium">
-        {metric.name}
+    <div className="bg-bg-card rounded-xl p-4 flex items-center gap-3">
+      <Link to={`/metrics/${metric.id}`} className="flex-1 min-w-0">
+        <div className="font-heading font-semibold text-base text-text">{metric.name}</div>
+        <div className="text-sm text-text-muted mt-0.5">{subtitle}</div>
       </Link>
       <fetcher.Form method="post">
         <input type="hidden" name="intent" value="log-entry" />
         <input type="hidden" name="metricId" value={metric.id} />
         <input type="hidden" name="date" value={date} />
         <input type="hidden" name="value" value={optimisticChecked ? "0" : "1"} />
-        <button
-          type="submit"
-          className={`w-12 h-7 rounded-full transition-colors relative ${
-            optimisticChecked ? "bg-success" : "bg-border"
-          }`}
-          aria-label={`Toggle ${metric.name}`}
-        >
-          <span
-            className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${
-              optimisticChecked ? "translate-x-5" : "translate-x-0.5"
-            }`}
-          />
+        <button type="submit" className="min-w-[44px] min-h-[44px] flex items-center justify-center">
+          {optimisticChecked ? <CheckCircle /> : <EmptyCircle />}
         </button>
       </fetcher.Form>
     </div>
@@ -60,8 +71,18 @@ function NumericRow({ metric, entry, date }: MetricRowProps) {
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState(entry?.value?.toString() ?? "");
 
-  const displayValue = entry?.value != null ? `${entry.value} ${metric.unit ?? ""}`.trim() : "—";
   const goalMet = metric.goal != null && entry?.value != null && entry.value >= metric.goal;
+  const remaining = metric.goal != null && entry?.value != null ? Math.max(0, metric.goal - entry.value) : metric.goal;
+  const unitLabel = metric.unit ?? "";
+
+  let subtitle: string;
+  if (entry?.value == null) {
+    subtitle = `Goal: ${metric.goal ?? "—"} ${unitLabel}`.trim();
+  } else if (goalMet) {
+    subtitle = `Goal Met \u00b7 ${entry.value} ${unitLabel}`.trim();
+  } else {
+    subtitle = `Current: ${entry.value} / Goal: ${metric.goal} ${unitLabel}`.trim();
+  }
 
   function handleSubmit() {
     const val = parseFloat(inputValue);
@@ -74,9 +95,10 @@ function NumericRow({ metric, entry, date }: MetricRowProps) {
   }
 
   return (
-    <div className="flex items-center px-4 py-3 min-h-[56px]">
-      <Link to={`/metrics/${metric.id}`} className="flex-1 text-text font-medium">
-        {metric.name}
+    <div className="bg-bg-card rounded-xl p-4 flex items-center gap-3">
+      <Link to={`/metrics/${metric.id}`} className="flex-1 min-w-0">
+        <div className="font-heading font-semibold text-base text-text">{metric.name}</div>
+        <div className="text-sm text-text-muted mt-0.5">{subtitle}</div>
       </Link>
       {editing ? (
         <div className="flex items-center gap-2">
@@ -84,21 +106,27 @@ function NumericRow({ metric, entry, date }: MetricRowProps) {
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             autoFocus
-            className="w-20 px-2 py-1 rounded-lg border border-border bg-bg text-text text-right focus:outline-none focus:ring-2 focus:ring-accent" />
+            className="w-20 px-3 py-2 rounded-lg bg-surface-container-high text-text text-right focus:outline-none focus:ring-2 focus:ring-primary" />
           <button onClick={handleSubmit}
-            className="px-3 py-1 bg-accent text-white rounded-lg text-sm min-h-[36px]">Save</button>
+            className="px-3 py-2 bg-primary text-white rounded-full text-sm font-medium min-h-[36px]">Save</button>
           <button onClick={() => setEditing(false)}
-            className="px-2 py-1 text-text-muted text-sm min-h-[36px]">Cancel</button>
+            className="px-2 py-2 text-text-muted text-sm min-h-[36px]">Cancel</button>
         </div>
+      ) : goalMet ? (
+        <button
+          onClick={() => { setInputValue(entry?.value?.toString() ?? ""); setEditing(true); }}
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center"
+        >
+          <CheckCircle />
+        </button>
       ) : (
         <button
           onClick={() => { setInputValue(entry?.value?.toString() ?? ""); setEditing(true); }}
-          className={`px-3 py-1 rounded-lg min-h-[36px] text-sm font-medium ${
-            goalMet ? "bg-success/20 text-success"
-              : entry?.value != null ? "bg-accent/10 text-accent"
-              : "bg-border text-text-muted"
-          }`}>
-          {displayValue}
+          className="px-3 py-1.5 rounded-full bg-surface-container-high text-sm font-medium text-text-muted min-h-[36px]"
+        >
+          {remaining != null && entry?.value != null
+            ? `${Math.round(remaining)} LEFT`
+            : "Log"}
         </button>
       )}
     </div>
