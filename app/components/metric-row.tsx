@@ -125,7 +125,7 @@ function NumericRow({ metric, entry, date }: MetricRowProps) {
           className="px-3 py-1.5 rounded-full bg-surface-container-high text-sm font-medium text-text-muted min-h-[36px]"
         >
           {remaining != null && entry?.value != null
-            ? `${Math.round(remaining)} LEFT`
+            ? `${parseFloat(remaining.toFixed(2))} LEFT`
             : "Log"}
         </button>
       )}

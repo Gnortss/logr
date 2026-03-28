@@ -36,17 +36,17 @@ export function DateNav({ date }: DateNavProps) {
         <h1 className="text-2xl font-bold font-heading text-text">
           {isToday ? "Today" : new Date(date + "T00:00:00Z").toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "UTC" })}
         </h1>
-        {!isCurrentWeek && (
-          <div className="flex gap-1">
-            <button
-              onClick={goToPrevWeek}
-              className="p-2 rounded-lg hover:bg-surface-container-high transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-              aria-label="Previous week"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
-                <path d="m15 18-6-6 6-6"/>
-              </svg>
-            </button>
+        <div className="flex gap-1">
+          <button
+            onClick={goToPrevWeek}
+            className="p-2 rounded-lg hover:bg-surface-container-high transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+            aria-label="Previous week"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+          </button>
+          {!isCurrentWeek && (
             <button
               onClick={goToNextWeek}
               className="p-2 rounded-lg hover:bg-surface-container-high transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -56,8 +56,8 @@ export function DateNav({ date }: DateNavProps) {
                 <path d="m9 18 6-6-6-6"/>
               </svg>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       <div className="flex justify-between">
         {weekDays.map((day) => {
