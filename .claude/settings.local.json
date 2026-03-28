@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout:*)",
+      "Bash(npx create-remix@latest . --template remix-run/remix/templates/cloudflare --no-git-init --yes)",
+      "Bash(npx create-react-router@latest . --template remix-run/remix/templates/cloudflare --no-git-init --yes)",
+      "Bash(npx create-react-router@latest . --template cloudflare --no-git-init --yes)",
+      "Bash(npx create-react-router@latest . --template remix-run/remix/tree/main/templates/cloudflare-workers --no-git-init --yes)",
+      "Bash(npx create-react-router@latest . --no-git-init --yes)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(git add:*)",
+      "Bash(git:*)"
+    ]
+  }
+}
