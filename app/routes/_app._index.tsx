@@ -1,4 +1,4 @@
-import { useLoaderData } from "react-router";
+import { useLoaderData, useFetcher } from "react-router";
 import { useState } from "react";
 import type { Route } from "./+types/_app._index";
 import { requireAuth } from "~/lib/auth.server";
@@ -9,6 +9,22 @@ import { MetricForm } from "~/components/metric-form";
 import { MetricRow } from "~/components/metric-row";
 import { DateNav } from "~/components/date-nav";
 import { today } from "~/lib/date";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const user = await requireAuth(request, context.cloudflare.env.JWT_SECRET);
@@ -54,6 +70,17 @@ export async function action({ request, context }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent") as string;
   const now = new Date().toISOString();
+
+  if (intent === "reorder") {
+    const ids = JSON.parse(formData.get("ids") as string) as number[];
+    for (let i = 0; i < ids.length; i++) {
+      await db
+        .update(metrics)
+        .set({ sortOrder: i })
+        .where(and(eq(metrics.id, ids[i]), eq(metrics.userId, user.userId)));
+    }
+    return { ok: true };
+  }
 
   if (intent === "add-metric") {
     const name = (formData.get("name") as string)?.trim();
@@ -130,31 +157,95 @@ export async function action({ request, context }: Route.ActionArgs) {
   return { error: "Unknown intent." };
 }
 
+function SortableMetricRow({ metric, entry, date }: { metric: any; entry: any; date: string }) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: metric.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center">
+      <button
+        {...attributes}
+        {...listeners}
+        className="px-2 py-3 text-text-muted cursor-grab active:cursor-grabbing min-w-[32px] min-h-[44px] flex items-center"
+        aria-label="Drag to reorder"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
+          <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
+          <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
+        </svg>
+      </button>
+      <div className="flex-1">
+        <MetricRow metric={metric} entry={entry} date={date} />
+      </div>
+    </div>
+  );
+}
+
 export default function TodayView() {
   const { date, metrics: metricsList } = useLoaderData<typeof loader>();
   const [showAddForm, setShowAddForm] = useState(false);
+  const [orderedMetrics, setOrderedMetrics] = useState(metricsList);
+  const fetcher = useFetcher();
+
+  // Sync with loader data when it changes
+  const [prevMetrics, setPrevMetrics] = useState(metricsList);
+  if (metricsList !== prevMetrics) {
+    setOrderedMetrics(metricsList);
+    setPrevMetrics(metricsList);
+  }
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = orderedMetrics.findIndex((m) => m.id === active.id);
+    const newIndex = orderedMetrics.findIndex((m) => m.id === over.id);
+    const newOrder = [...orderedMetrics];
+    const [moved] = newOrder.splice(oldIndex, 1);
+    newOrder.splice(newIndex, 0, moved);
+    setOrderedMetrics(newOrder);
+
+    fetcher.submit(
+      { intent: "reorder", ids: JSON.stringify(newOrder.map((m) => m.id)) },
+      { method: "post" }
+    );
+  }
 
   return (
     <div className="pb-24">
       <DateNav date={date} />
 
-      {metricsList.length === 0 ? (
+      {orderedMetrics.length === 0 ? (
         <div className="p-8 text-center text-text-muted">
           <p className="mb-2">No metrics yet.</p>
           <p className="text-sm">Tap "Add Metric" below to get started.</p>
         </div>
       ) : (
-        <div className="divide-y divide-border">
-          {metricsList.map((m) => (
-            <MetricRow key={m.id} metric={m} entry={m.entry} date={date} />
-          ))}
-        </div>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={orderedMetrics.map((m) => m.id)} strategy={verticalListSortingStrategy}>
+            <div className="divide-y divide-border">
+              {orderedMetrics.map((m) => (
+                <SortableMetricRow key={m.id} metric={m} entry={m.entry} date={date} />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-bg">
         <button
           onClick={() => setShowAddForm(true)}
-          className="w-full py-3 bg-accent text-white font-medium rounded-xl hover:bg-accent-dark transition-colors min-h-[44px] max-w-lg mx-auto block">
+          className="w-full py-3 bg-accent text-white font-medium rounded-xl hover:bg-accent-dark transition-colors min-h-[44px] max-w-lg mx-auto block"
+        >
           Add Metric
         </button>
       </div>
