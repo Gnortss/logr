@@ -114,10 +114,10 @@ export default function SettingsView() {
         <h2 className="text-lg font-semibold font-heading text-text mb-3">Metrics</h2>
         <div className="space-y-3">
           {activeMetrics.map((m) => (
-            <div key={m.id} className="flex items-center justify-between bg-bg-card rounded-xl px-4 py-3">
-              <div className="flex items-center gap-2">
+            <div key={m.id} className="flex items-start justify-between bg-bg-card rounded-xl px-4 py-3">
+              <div className="flex flex-col gap-1">
                 <span className="text-text font-medium">{m.name}</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-secondary-container text-secondary font-medium">{m.type}</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-secondary-container text-secondary font-medium w-fit">{m.type}</span>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => setEditingMetric(m)}
