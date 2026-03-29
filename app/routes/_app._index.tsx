@@ -88,9 +88,12 @@ export async function action({ request, context }: Route.ActionArgs) {
     const unit = (formData.get("unit") as string) || null;
     const goalStr = formData.get("goal") as string;
     const goal = goalStr ? parseFloat(goalStr) : null;
+    const goalDirection = (formData.get("goalDirection") as string) || null;
 
     if (!name || !type) return { error: "Name and type are required." };
-    if (type !== "boolean" && goal === null) return { error: "Goal is required for this type." };
+    if (type !== "boolean" && goal != null && !goalDirection) {
+      return { error: "Goal direction is required when a goal is set." };
+    }
 
     const maxOrder = await db
       .select({ max: metrics.sortOrder })
@@ -101,6 +104,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     await db.insert(metrics).values({
       userId: user.userId,
       name, type, unit, goal,
+      goalDirection: goal != null ? goalDirection : null,
       sortOrder: (maxOrder?.max ?? -1) + 1,
       createdAt: now,
     });
@@ -113,12 +117,13 @@ export async function action({ request, context }: Route.ActionArgs) {
     const name = (formData.get("name") as string)?.trim();
     const goalStr = formData.get("goal") as string;
     const goal = goalStr ? parseFloat(goalStr) : null;
+    const goalDirection = (formData.get("goalDirection") as string) || null;
 
     if (!name) return { error: "Name is required." };
 
     await db
       .update(metrics)
-      .set({ name, goal })
+      .set({ name, goal, goalDirection: goal != null ? goalDirection : null })
       .where(and(eq(metrics.id, metricId), eq(metrics.userId, user.userId)));
 
     return { ok: true };

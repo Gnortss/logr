@@ -61,8 +61,9 @@ export async function action({ request, context }: Route.ActionArgs) {
     const name = (formData.get("name") as string)?.trim();
     const goalStr = formData.get("goal") as string;
     const goal = goalStr ? parseFloat(goalStr) : null;
+    const goalDirection = (formData.get("goalDirection") as string) || null;
     if (!name) return { error: "Name is required." };
-    await db.update(metrics).set({ name, goal })
+    await db.update(metrics).set({ name, goal, goalDirection: goal != null ? goalDirection : null })
       .where(and(eq(metrics.id, metricId), eq(metrics.userId, user.userId)));
     return { ok: true };
   }
@@ -199,6 +200,7 @@ export default function SettingsView() {
             type: editingMetric.type as MetricType,
             unit: editingMetric.unit,
             goal: editingMetric.goal,
+            goalDirection: editingMetric.goalDirection,
           }}
         />
       )}
