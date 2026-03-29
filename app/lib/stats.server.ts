@@ -1,3 +1,5 @@
+import { isGoalMet, type GoalDirection } from "~/lib/types";
+
 interface Entry {
   date: string;
   value: number;
@@ -73,14 +75,20 @@ export interface NumericStats {
   goalHitRate: number;
 }
 
-export function computeNumericStats(entries: Entry[], goal: number | null): NumericStats {
+export function computeNumericStats(
+  entries: Entry[],
+  goal: number | null,
+  goalDirection: GoalDirection | null = "at_least"
+): NumericStats {
   if (entries.length === 0) {
     return { average: 0, min: 0, max: 0, total: 0, daysTracked: 0, daysGoalMet: 0, goalHitRate: 0 };
   }
 
   const values = entries.map((e) => e.value);
   const total = values.reduce((sum, v) => sum + v, 0);
-  const daysGoalMet = goal != null ? values.filter((v) => v >= goal).length : 0;
+  const daysGoalMet = goal != null && goalDirection != null
+    ? values.filter((v) => isGoalMet(v, goal, goalDirection)).length
+    : 0;
 
   return {
     average: total / values.length,
@@ -89,7 +97,7 @@ export function computeNumericStats(entries: Entry[], goal: number | null): Nume
     total,
     daysTracked: entries.length,
     daysGoalMet,
-    goalHitRate: goal != null ? (daysGoalMet / entries.length) * 100 : 0,
+    goalHitRate: goal != null && goalDirection != null ? (daysGoalMet / entries.length) * 100 : 0,
   };
 }
 

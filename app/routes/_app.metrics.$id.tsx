@@ -6,6 +6,7 @@ import { metrics, metricEntries } from "~/db/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { addDays, today } from "~/lib/date";
 import { computeBooleanStats, computeNumericStats, computeTrend } from "~/lib/stats.server";
+import type { GoalDirection } from "~/lib/types";
 import { Heatmap } from "~/components/heatmap";
 import { StatsPanel } from "~/components/stats-panel";
 import { EntriesTable } from "~/components/entries-table";
@@ -43,7 +44,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   if (metric.type === "boolean") {
     stats = computeBooleanStats(entries, from, to);
   } else {
-    stats = computeNumericStats(entries, metric.goal);
+    stats = computeNumericStats(entries, metric.goal, metric.goalDirection as GoalDirection | null);
     trend = computeTrend(entries);
   }
 
