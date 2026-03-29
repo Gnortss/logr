@@ -10,7 +10,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   checkRateLimit(keyId);
 
   const result = await db
-    .select({ id: metrics.id, name: metrics.name, type: metrics.type, unit: metrics.unit, goal: metrics.goal })
+    .select({ id: metrics.id, name: metrics.name, type: metrics.type, unit: metrics.unit, goal: metrics.goal, goalDirection: metrics.goalDirection })
     .from(metrics)
     .where(and(eq(metrics.userId, userId), eq(metrics.archived, 0)))
     .all();

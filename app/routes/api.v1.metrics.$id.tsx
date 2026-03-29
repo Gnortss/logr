@@ -21,6 +21,6 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 
   return Response.json({
     ok: true,
-    data: { id: metric.id, name: metric.name, type: metric.type, unit: metric.unit, goal: metric.goal },
+    data: { id: metric.id, name: metric.name, type: metric.type, unit: metric.unit, goal: metric.goal, goalDirection: metric.goalDirection },
   });
 }
