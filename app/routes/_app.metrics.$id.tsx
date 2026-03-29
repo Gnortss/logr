@@ -111,8 +111,10 @@ export default function MetricDetailView() {
       <div className="bg-bg-card rounded-xl p-4">
         <div className="text-lg font-heading font-semibold text-text mb-1">{metric.name}</div>
         {metric.unit && <span className="text-sm text-text-muted">{metric.unit}</span>}
-        {metric.goal != null && (
-          <span className="text-sm text-text-muted ml-2">Goal: {metric.goal} {metric.unit ?? ""}</span>
+        {metric.goal != null && metric.goalDirection != null && (
+          <span className="text-sm text-text-muted ml-2">
+            Goal: {metric.goalDirection === "at_least" ? "≥" : metric.goalDirection === "at_most" ? "≤" : "≈"} {metric.goal} {metric.unit ?? ""}
+          </span>
         )}
       </div>
 
