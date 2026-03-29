@@ -1,4 +1,5 @@
 import { addDays } from "~/lib/date";
+import { isGoalMet, type GoalDirection } from "~/lib/types";
 
 interface HeatmapProps {
   entries: { date: string; value: number }[];
@@ -6,9 +7,10 @@ interface HeatmapProps {
   to: string;
   type: "boolean" | string;
   goal: number | null;
+  goalDirection: GoalDirection | null;
 }
 
-export function Heatmap({ entries, from, to, type, goal }: HeatmapProps) {
+export function Heatmap({ entries, from, to, type, goal, goalDirection }: HeatmapProps) {
   const entryMap = new Map(entries.map((e) => [e.date, e.value]));
 
   const values = entries.map((e) => e.value).filter((v) => v > 0);
@@ -48,7 +50,11 @@ export function Heatmap({ entries, from, to, type, goal }: HeatmapProps) {
     if (type === "boolean") {
       return value === 1 ? "bg-primary" : "bg-surface-container-high";
     }
-    if (goal != null && value >= goal) return "bg-primary";
+    if (goal == null || goalDirection == null) {
+      // No goal: binary — tracked vs not tracked
+      return value > 0 ? "bg-primary" : "bg-surface-container-high";
+    }
+    if (isGoalMet(value, goal, goalDirection)) return "bg-primary";
     const range = maxVal - minVal;
     const intensity = range > 0 ? (value - minVal) / range : 0.5;
     if (intensity >= 0.75) return "bg-primary";
