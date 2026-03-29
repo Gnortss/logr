@@ -1,6 +1,6 @@
 import { Form, useNavigation } from "react-router";
 import { useState } from "react";
-import { METRIC_TYPES, UNITS_BY_TYPE, type MetricType } from "~/lib/types";
+import { METRIC_TYPES, UNITS_BY_TYPE, type MetricType, type GoalDirection } from "~/lib/types";
 
 interface MetricFormProps {
   open: boolean;
@@ -11,7 +11,7 @@ interface MetricFormProps {
     type: MetricType;
     unit: string | null;
     goal: number | null;
-    goalDirection: string | null;
+    goalDirection: GoalDirection | null;
   };
 }
 

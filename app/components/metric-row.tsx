@@ -1,7 +1,6 @@
 import { useFetcher, Link } from "react-router";
 import { useState } from "react";
-import type { MetricType } from "~/lib/types";
-import { isGoalMet, type GoalDirection } from "~/lib/types";
+import { isGoalMet, type MetricType, type GoalDirection } from "~/lib/types";
 
 interface MetricRowProps {
   metric: {
@@ -10,7 +9,7 @@ interface MetricRowProps {
     type: MetricType;
     unit: string | null;
     goal: number | null;
-    goalDirection: string | null;
+    goalDirection: GoalDirection | null;
   };
   entry: { value: number } | null;
   date: string;
@@ -71,7 +70,7 @@ function NumericRow({ metric, entry, date }: MetricRowProps) {
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState(entry?.value?.toString() ?? "");
 
-  const direction = metric.goalDirection as GoalDirection | null;
+  const direction = metric.goalDirection;
   const goalMet = entry?.value != null && isGoalMet(entry.value, metric.goal, direction);
   const unitLabel = metric.unit ?? "";
 

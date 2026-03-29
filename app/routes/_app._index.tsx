@@ -5,6 +5,7 @@ import { requireAuth } from "~/lib/auth.server";
 import { getDb } from "~/lib/db.server";
 import { metrics, metricEntries } from "~/db/schema";
 import { eq, and, asc } from "drizzle-orm";
+import { GOAL_DIRECTIONS } from "~/lib/types";
 import { MetricForm } from "~/components/metric-form";
 import { MetricRow } from "~/components/metric-row";
 import { DateNav } from "~/components/date-nav";
@@ -94,6 +95,9 @@ export async function action({ request, context }: Route.ActionArgs) {
     if (type !== "boolean" && goal != null && !goalDirection) {
       return { error: "Goal direction is required when a goal is set." };
     }
+    if (goalDirection && !GOAL_DIRECTIONS.includes(goalDirection as any)) {
+      return { error: "Invalid goal direction." };
+    }
 
     const maxOrder = await db
       .select({ max: metrics.sortOrder })
@@ -120,6 +124,9 @@ export async function action({ request, context }: Route.ActionArgs) {
     const goalDirection = (formData.get("goalDirection") as string) || null;
 
     if (!name) return { error: "Name is required." };
+    if (goalDirection && !GOAL_DIRECTIONS.includes(goalDirection as any)) {
+      return { error: "Invalid goal direction." };
+    }
 
     await db
       .update(metrics)
