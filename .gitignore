@@ -11,3 +11,6 @@
 .wrangler/
 .mf/
 *.local
+
+# Worktrees
+.worktrees/
