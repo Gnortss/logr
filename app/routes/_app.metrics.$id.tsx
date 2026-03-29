@@ -6,6 +6,7 @@ import { metrics, metricEntries } from "~/db/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { addDays, today } from "~/lib/date";
 import { computeBooleanStats, computeNumericStats, computeTrend } from "~/lib/stats.server";
+import type { GoalDirection } from "~/lib/types";
 import { Heatmap } from "~/components/heatmap";
 import { StatsPanel } from "~/components/stats-panel";
 import { EntriesTable } from "~/components/entries-table";
@@ -43,7 +44,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   if (metric.type === "boolean") {
     stats = computeBooleanStats(entries, from, to);
   } else {
-    stats = computeNumericStats(entries, metric.goal);
+    stats = computeNumericStats(entries, metric.goal, metric.goalDirection as GoalDirection | null);
     trend = computeTrend(entries);
   }
 
@@ -110,8 +111,10 @@ export default function MetricDetailView() {
       <div className="bg-bg-card rounded-xl p-4">
         <div className="text-lg font-heading font-semibold text-text mb-1">{metric.name}</div>
         {metric.unit && <span className="text-sm text-text-muted">{metric.unit}</span>}
-        {metric.goal != null && (
-          <span className="text-sm text-text-muted ml-2">Goal: {metric.goal} {metric.unit ?? ""}</span>
+        {metric.goal != null && metric.goalDirection != null && (
+          <span className="text-sm text-text-muted ml-2">
+            Goal: {metric.goalDirection === "at_least" ? "≥" : metric.goalDirection === "at_most" ? "≤" : "≈"} {metric.goal} {metric.unit ?? ""}
+          </span>
         )}
       </div>
 
@@ -119,12 +122,12 @@ export default function MetricDetailView() {
         <StatsPanel
           type={isBoolean ? "boolean" : "numeric"}
           stats={stats as any}
-          {...(!isBoolean && { trend: trend as any, unit: metric.unit })}
+          {...(!isBoolean && { trend: trend as any, unit: metric.unit, hasGoal: metric.goal != null })}
         />
       </div>
 
       <div>
-        <Heatmap entries={entries} from={from} to={to} type={metric.type} goal={metric.goal} />
+        <Heatmap entries={entries} from={from} to={to} type={metric.type} goal={metric.goal} goalDirection={metric.goalDirection as GoalDirection | null} />
       </div>
 
       {entries.length > 0 && (

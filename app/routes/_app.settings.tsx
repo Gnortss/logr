@@ -7,7 +7,7 @@ import { metrics, users, apiKeys } from "~/db/schema";
 import { eq, and } from "drizzle-orm";
 import { MetricForm } from "~/components/metric-form";
 import { createApiKeyForUser } from "~/lib/api-key.server";
-import type { MetricType } from "~/lib/types";
+import { GOAL_DIRECTIONS, type MetricType } from "~/lib/types";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const user = await requireAuth(request, context.cloudflare.env.JWT_SECRET);
@@ -61,8 +61,12 @@ export async function action({ request, context }: Route.ActionArgs) {
     const name = (formData.get("name") as string)?.trim();
     const goalStr = formData.get("goal") as string;
     const goal = goalStr ? parseFloat(goalStr) : null;
+    const goalDirection = (formData.get("goalDirection") as string) || null;
     if (!name) return { error: "Name is required." };
-    await db.update(metrics).set({ name, goal })
+    if (goalDirection && !GOAL_DIRECTIONS.includes(goalDirection as any)) {
+      return { error: "Invalid goal direction." };
+    }
+    await db.update(metrics).set({ name, goal, goalDirection: goal != null ? goalDirection : null })
       .where(and(eq(metrics.id, metricId), eq(metrics.userId, user.userId)));
     return { ok: true };
   }
@@ -199,6 +203,7 @@ export default function SettingsView() {
             type: editingMetric.type as MetricType,
             unit: editingMetric.unit,
             goal: editingMetric.goal,
+            goalDirection: editingMetric.goalDirection,
           }}
         />
       )}

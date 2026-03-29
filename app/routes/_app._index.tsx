@@ -5,6 +5,7 @@ import { requireAuth } from "~/lib/auth.server";
 import { getDb } from "~/lib/db.server";
 import { metrics, metricEntries } from "~/db/schema";
 import { eq, and, asc } from "drizzle-orm";
+import { GOAL_DIRECTIONS } from "~/lib/types";
 import { MetricForm } from "~/components/metric-form";
 import { MetricRow } from "~/components/metric-row";
 import { DateNav } from "~/components/date-nav";
@@ -88,9 +89,15 @@ export async function action({ request, context }: Route.ActionArgs) {
     const unit = (formData.get("unit") as string) || null;
     const goalStr = formData.get("goal") as string;
     const goal = goalStr ? parseFloat(goalStr) : null;
+    const goalDirection = (formData.get("goalDirection") as string) || null;
 
     if (!name || !type) return { error: "Name and type are required." };
-    if (type !== "boolean" && goal === null) return { error: "Goal is required for this type." };
+    if (type !== "boolean" && goal != null && !goalDirection) {
+      return { error: "Goal direction is required when a goal is set." };
+    }
+    if (goalDirection && !GOAL_DIRECTIONS.includes(goalDirection as any)) {
+      return { error: "Invalid goal direction." };
+    }
 
     const maxOrder = await db
       .select({ max: metrics.sortOrder })
@@ -101,6 +108,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     await db.insert(metrics).values({
       userId: user.userId,
       name, type, unit, goal,
+      goalDirection: goal != null ? goalDirection : null,
       sortOrder: (maxOrder?.max ?? -1) + 1,
       createdAt: now,
     });
@@ -113,12 +121,16 @@ export async function action({ request, context }: Route.ActionArgs) {
     const name = (formData.get("name") as string)?.trim();
     const goalStr = formData.get("goal") as string;
     const goal = goalStr ? parseFloat(goalStr) : null;
+    const goalDirection = (formData.get("goalDirection") as string) || null;
 
     if (!name) return { error: "Name is required." };
+    if (goalDirection && !GOAL_DIRECTIONS.includes(goalDirection as any)) {
+      return { error: "Invalid goal direction." };
+    }
 
     await db
       .update(metrics)
-      .set({ name, goal })
+      .set({ name, goal, goalDirection: goal != null ? goalDirection : null })
       .where(and(eq(metrics.id, metricId), eq(metrics.userId, user.userId)));
 
     return { ok: true };
@@ -233,7 +245,7 @@ export default function TodayView() {
         <div className="px-4 pt-2">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-heading font-semibold text-lg text-text">Core Metrics</h2>
-            <span className="text-sm text-text-muted">{orderedMetrics.filter(m => m.goal != null || m.type === 'boolean').length} active goals</span>
+            <span className="text-sm text-text-muted">{orderedMetrics.filter(m => (m.goal != null && m.goalDirection != null) || m.type === 'boolean').length} active goals</span>
           </div>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={orderedMetrics.map((m) => m.id)} strategy={verticalListSortingStrategy}>

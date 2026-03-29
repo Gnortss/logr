@@ -1,6 +1,6 @@
 import { Form, useNavigation } from "react-router";
 import { useState } from "react";
-import { METRIC_TYPES, UNITS_BY_TYPE, type MetricType } from "~/lib/types";
+import { METRIC_TYPES, UNITS_BY_TYPE, type MetricType, type GoalDirection } from "~/lib/types";
 
 interface MetricFormProps {
   open: boolean;
@@ -11,6 +11,7 @@ interface MetricFormProps {
     type: MetricType;
     unit: string | null;
     goal: number | null;
+    goalDirection: GoalDirection | null;
   };
 }
 
@@ -19,6 +20,12 @@ export function MetricForm({ open, onClose, metric }: MetricFormProps) {
   const [type, setType] = useState<MetricType>(metric?.type ?? "boolean");
   const units = UNITS_BY_TYPE[type];
   const navigation = useNavigation();
+  const [goalEnabled, setGoalEnabled] = useState(
+    isEdit ? metric.goal != null : true
+  );
+  const [goalDirection, setGoalDirection] = useState(
+    metric?.goalDirection ?? "at_least"
+  );
   const isSubmitting = navigation.state === "submitting";
 
   if (!open) return null;
@@ -53,7 +60,8 @@ export function MetricForm({ open, onClose, metric }: MetricFormProps) {
             {units.length > 0 && (
               <div>
                 <label htmlFor="unit" className="block text-sm font-medium text-text mb-1">Unit</label>
-                <select id="unit" name="unit" disabled={isEdit} defaultValue={metric?.unit ?? units[0]}
+                <select id="unit" name="unit" disabled={isEdit || units.length === 1}
+                  defaultValue={metric?.unit ?? units[0]}
                   className="w-full px-3 py-3 rounded-lg bg-surface-container-high text-text focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50">
                   {units.map((u) => (
                     <option key={u} value={u}>{u}</option>
@@ -62,11 +70,45 @@ export function MetricForm({ open, onClose, metric }: MetricFormProps) {
               </div>
             )}
             {type !== "boolean" && (
-              <div>
-                <label htmlFor="goal" className="block text-sm font-medium text-text mb-1">Daily Goal</label>
-                <input id="goal" name="goal" type="number" step="any" required
-                  defaultValue={metric?.goal ?? undefined} placeholder="e.g. 3"
-                  className="w-full px-3 py-3 rounded-lg bg-surface-container-high text-text placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary" />
+              <div className="space-y-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={goalEnabled}
+                    onChange={(e) => setGoalEnabled(e.target.checked)}
+                    className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm font-medium text-text">Set a daily goal</span>
+                </label>
+                {goalEnabled && (
+                  <>
+                    <div>
+                      <label htmlFor="goalDirection" className="block text-sm font-medium text-text mb-1">Direction</label>
+                      <select
+                        id="goalDirection"
+                        name="goalDirection"
+                        value={goalDirection}
+                        onChange={(e) => setGoalDirection(e.target.value)}
+                        className="w-full px-3 py-3 rounded-lg bg-surface-container-high text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <option value="at_least">At least</option>
+                        <option value="at_most">At most</option>
+                        <option value="approximately">Approximately</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="goal" className="block text-sm font-medium text-text mb-1">Daily Goal</label>
+                      <input id="goal" name="goal" type="number" step="any" required
+                        defaultValue={metric?.goal ?? undefined} placeholder="e.g. 3"
+                        className="w-full px-3 py-3 rounded-lg bg-surface-container-high text-text placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary" />
+                    </div>
+                    {isEdit && (
+                      <p className="text-xs text-text-muted">
+                        Changing the goal applies to all tracked data, including past entries.
+                      </p>
+                    )}
+                  </>
+                )}
               </div>
             )}
             <div className="flex gap-3 pt-2">
