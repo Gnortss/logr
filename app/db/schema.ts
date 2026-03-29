@@ -23,6 +23,7 @@ export const metrics = sqliteTable("metrics", {
   type: text("type").notNull(),
   unit: text("unit"),
   goal: real("goal"),
+  goalDirection: text("goal_direction"),
   sortOrder: integer("sort_order").notNull().default(0),
   archived: integer("archived").notNull().default(0),
   createdAt: text("created_at").notNull(),
