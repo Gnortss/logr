@@ -120,7 +120,7 @@ export default function MetricDetailView() {
         <StatsPanel
           type={isBoolean ? "boolean" : "numeric"}
           stats={stats as any}
-          {...(!isBoolean && { trend: trend as any, unit: metric.unit })}
+          {...(!isBoolean && { trend: trend as any, unit: metric.unit, hasGoal: metric.goal != null })}
         />
       </div>
 

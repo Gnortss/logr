@@ -10,6 +10,7 @@ interface NumericStatsPanelProps {
   stats: NumericStats;
   trend: Trend;
   unit: string | null;
+  hasGoal: boolean;
 }
 
 type StatsPanelProps = BooleanStatsPanelProps | NumericStatsPanelProps;
@@ -18,7 +19,7 @@ export function StatsPanel(props: StatsPanelProps) {
   if (props.type === "boolean") {
     return <BooleanStatsPanel stats={props.stats} />;
   }
-  return <NumericStatsPanel stats={props.stats} trend={props.trend} unit={props.unit} />;
+  return <NumericStatsPanel stats={props.stats} trend={props.trend} unit={props.unit} hasGoal={props.hasGoal} />;
 }
 
 function StatCard({ label, value, sublabel }: { label: string; value: string | number; sublabel?: string }) {
@@ -50,7 +51,7 @@ function BooleanStatsPanel({ stats }: { stats: BooleanStats }) {
   );
 }
 
-function NumericStatsPanel({ stats, trend, unit }: { stats: NumericStats; trend: Trend; unit: string | null }) {
+function NumericStatsPanel({ stats, trend, unit, hasGoal }: { stats: NumericStats; trend: Trend; unit: string | null; hasGoal: boolean }) {
   const u = unit ?? "";
   const trendIcon = trend === "up" ? "\u2191" : trend === "down" ? "\u2193" : "\u2192";
 
@@ -75,17 +76,19 @@ function NumericStatsPanel({ stats, trend, unit }: { stats: NumericStats; trend:
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <StatCard label="Longest Streak" value={stats.daysGoalMet} sublabel="Days" />
+      <div className={`grid ${hasGoal ? "grid-cols-2" : "grid-cols-1"} gap-3`}>
+        {hasGoal && <StatCard label="Longest Streak" value={stats.daysGoalMet} sublabel="Days" />}
         <StatCard label="Current Trend" value={trendIcon} sublabel={trend} />
       </div>
-      <div className="bg-primary rounded-xl p-4 flex items-center justify-between">
-        <div>
-          <div className="text-xs font-semibold text-white/70 uppercase tracking-wide">Goal Hit Rate</div>
-          <div className="text-3xl font-bold font-heading text-white">{Math.round(stats.goalHitRate)}%</div>
+      {hasGoal && (
+        <div className="bg-primary rounded-xl p-4 flex items-center justify-between">
+          <div>
+            <div className="text-xs font-semibold text-white/70 uppercase tracking-wide">Goal Hit Rate</div>
+            <div className="text-3xl font-bold font-heading text-white">{Math.round(stats.goalHitRate)}%</div>
+          </div>
+          <CompletionRing percent={stats.goalHitRate} />
         </div>
-        <CompletionRing percent={stats.goalHitRate} />
-      </div>
+      )}
     </div>
   );
 }
