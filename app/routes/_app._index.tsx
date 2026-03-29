@@ -238,7 +238,7 @@ export default function TodayView() {
         <div className="px-4 pt-2">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-heading font-semibold text-lg text-text">Core Metrics</h2>
-            <span className="text-sm text-text-muted">{orderedMetrics.filter(m => m.goal != null || m.type === 'boolean').length} active goals</span>
+            <span className="text-sm text-text-muted">{orderedMetrics.filter(m => (m.goal != null && m.goalDirection != null) || m.type === 'boolean').length} active goals</span>
           </div>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={orderedMetrics.map((m) => m.id)} strategy={verticalListSortingStrategy}>
