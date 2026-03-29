@@ -1,6 +1,7 @@
 import { useFetcher, Link } from "react-router";
 import { useState } from "react";
 import type { MetricType } from "~/lib/types";
+import { isGoalMet, type GoalDirection } from "~/lib/types";
 
 interface MetricRowProps {
   metric: {
@@ -9,6 +10,7 @@ interface MetricRowProps {
     type: MetricType;
     unit: string | null;
     goal: number | null;
+    goalDirection: string | null;
   };
   entry: { value: number } | null;
   date: string;
@@ -43,15 +45,13 @@ function BooleanRow({ metric, entry, date }: MetricRowProps) {
   const optimisticChecked =
     fetcher.formData ? fetcher.formData.get("value") === "1" : isChecked;
 
-  const subtitle = optimisticChecked
-    ? `Goal Met`
-    : "Not tracked";
+  const subtitle = optimisticChecked ? "" : "Not tracked";
 
   return (
     <div className="bg-bg-card rounded-xl p-4 flex items-center gap-3">
       <Link to={`/metrics/${metric.id}`} className="flex-1 min-w-0">
         <div className="font-heading font-semibold text-base text-text">{metric.name}</div>
-        <div className="text-sm text-text-muted mt-0.5">{subtitle}</div>
+        {subtitle && <div className="text-sm text-text-muted mt-0.5">{subtitle}</div>}
       </Link>
       <fetcher.Form method="post">
         <input type="hidden" name="intent" value="log-entry" />
@@ -71,17 +71,27 @@ function NumericRow({ metric, entry, date }: MetricRowProps) {
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState(entry?.value?.toString() ?? "");
 
-  const goalMet = metric.goal != null && entry?.value != null && entry.value >= metric.goal;
-  const remaining = metric.goal != null && entry?.value != null ? Math.max(0, metric.goal - entry.value) : metric.goal;
+  const direction = metric.goalDirection as GoalDirection | null;
+  const goalMet = entry?.value != null && isGoalMet(entry.value, metric.goal, direction);
   const unitLabel = metric.unit ?? "";
 
   let subtitle: string;
-  if (entry?.value == null) {
-    subtitle = `Goal: ${metric.goal ?? "—"} ${unitLabel}`.trim();
+  if (metric.goal == null || direction == null) {
+    // No goal set
+    subtitle = entry?.value != null
+      ? `${entry.value} ${unitLabel}`.trim()
+      : "Not tracked";
+  } else if (entry?.value == null) {
+    subtitle = `Goal: ${metric.goal} ${unitLabel}`.trim();
   } else if (goalMet) {
-    subtitle = `Goal Met \u00b7 ${entry.value} ${unitLabel}`.trim();
-  } else {
+    subtitle = `Goal Met · ${entry.value} ${unitLabel}`.trim();
+  } else if (direction === "at_least") {
     subtitle = `Current: ${entry.value} / Goal: ${metric.goal} ${unitLabel}`.trim();
+  } else if (direction === "at_most") {
+    subtitle = `${entry.value} / ${metric.goal} ${unitLabel}`.trim();
+  } else {
+    // approximately
+    subtitle = `${entry.value} / ${metric.goal} ${unitLabel}`.trim();
   }
 
   function handleSubmit() {
@@ -124,8 +134,8 @@ function NumericRow({ metric, entry, date }: MetricRowProps) {
           onClick={() => { setInputValue(entry?.value?.toString() ?? ""); setEditing(true); }}
           className="px-3 py-1.5 rounded-full bg-surface-container-high text-sm font-medium text-text-muted min-h-[36px]"
         >
-          {remaining != null && entry?.value != null
-            ? `${parseFloat(remaining.toFixed(2))} LEFT`
+          {metric.goal != null && direction === "at_least" && entry?.value != null
+            ? `${parseFloat(Math.max(0, metric.goal - entry.value).toFixed(2))} LEFT`
             : "Log"}
         </button>
       )}
