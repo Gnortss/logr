@@ -12,6 +12,7 @@ interface MetricFormProps {
     unit: string | null;
     goal: number | null;
     goalDirection: GoalDirection | null;
+    weeklyTarget: number | null;
   };
 }
 
@@ -26,6 +27,8 @@ export function MetricForm({ open, onClose, metric }: MetricFormProps) {
   const [goalDirection, setGoalDirection] = useState(
     metric?.goalDirection ?? "at_least"
   );
+  const [isWeekly, setIsWeekly] = useState(isEdit ? (metric.weeklyTarget != null) : false);
+  const [weeklyTarget, setWeeklyTarget] = useState(metric?.weeklyTarget ?? 3);
   const isSubmitting = navigation.state === "submitting";
 
   if (!open) return null;
@@ -40,6 +43,7 @@ export function MetricForm({ open, onClose, metric }: MetricFormProps) {
         <Form method="post" onSubmit={() => setTimeout(onClose, 100)}>
           <input type="hidden" name="intent" value={isEdit ? "edit-metric" : "add-metric"} />
           {isEdit && <input type="hidden" name="metricId" value={metric.id} />}
+          {isWeekly && <input type="hidden" name="weeklyTarget" value={weeklyTarget} />}
           <div className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-text mb-1">Name</label>
@@ -69,6 +73,67 @@ export function MetricForm({ open, onClose, metric }: MetricFormProps) {
                 </select>
               </div>
             )}
+            {/* Frequency */}
+            <div className="bg-surface-container-high rounded-xl p-4">
+              <label className="flex items-center justify-between cursor-pointer">
+                <div>
+                  <span className="text-sm font-medium text-text">Not every day</span>
+                  <span className="block text-xs text-text-muted mt-0.5">Set a weekly target instead</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={isWeekly}
+                  onChange={(e) => setIsWeekly(e.target.checked)}
+                  className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary"
+                />
+              </label>
+              {isWeekly && (
+                <div className="mt-4 pt-4 border-t border-outline-variant">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-text">Days per week</span>
+                    <span className="text-xs text-text-muted font-mono">any {weeklyTarget} of 7</span>
+                  </div>
+                  <div className="flex items-center border border-outline-variant rounded-lg overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setWeeklyTarget((v) => Math.max(1, v - 1))}
+                      disabled={weeklyTarget <= 1}
+                      className="w-12 h-10 text-lg text-text disabled:text-text-muted flex items-center justify-center"
+                    >
+                      −
+                    </button>
+                    <div className="flex-1 text-center font-mono text-lg font-semibold text-text">
+                      {weeklyTarget}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setWeeklyTarget((v) => Math.min(6, v + 1))}
+                      disabled={weeklyTarget >= 6}
+                      className="w-12 h-10 text-lg text-text disabled:text-text-muted flex items-center justify-center"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <div className="flex gap-1 mt-3 justify-center">
+                    {["M", "T", "W", "T", "F", "S", "S"].map((day, i) => (
+                      <div
+                        key={i}
+                        className={`w-8 h-8 rounded-md flex items-center justify-center text-xs font-semibold font-mono ${
+                          i < weeklyTarget
+                            ? "bg-primary-fixed text-primary border border-primary"
+                            : "bg-surface-container-high text-text-muted"
+                        }`}
+                      >
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-text-muted text-center mt-2">
+                    Any {weeklyTarget} days — order doesn't matter
+                  </p>
+                </div>
+              )}
+            </div>
             {type !== "boolean" && (
               <div className="space-y-3">
                 <label className="flex items-center gap-2 cursor-pointer">

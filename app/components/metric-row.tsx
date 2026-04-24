@@ -10,16 +10,18 @@ interface MetricRowProps {
     unit: string | null;
     goal: number | null;
     goalDirection: GoalDirection | null;
+    weeklyTarget: number | null;
   };
   entry: { value: number } | null;
   date: string;
+  weeklyDone: number;
 }
 
-export function MetricRow({ metric, entry, date }: MetricRowProps) {
+export function MetricRow({ metric, entry, date, weeklyDone }: MetricRowProps) {
   if (metric.type === "boolean") {
-    return <BooleanRow metric={metric} entry={entry} date={date} />;
+    return <BooleanRow metric={metric} entry={entry} date={date} weeklyDone={weeklyDone} />;
   }
-  return <NumericRow metric={metric} entry={entry} date={date} />;
+  return <NumericRow metric={metric} entry={entry} date={date} weeklyDone={weeklyDone} />;
 }
 
 function CheckCircle() {
@@ -38,34 +40,102 @@ function EmptyCircle() {
   );
 }
 
-function BooleanRow({ metric, entry, date }: MetricRowProps) {
+function FreqBadge({ weeklyTarget }: { weeklyTarget: number }) {
+  return (
+    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-surface-container-high text-text-muted border border-outline-variant whitespace-nowrap">
+      {weeklyTarget}× / week
+    </span>
+  );
+}
+
+function WeekDots({ done, target }: { done: number; target: number }) {
+  return (
+    <div className="flex gap-1 items-center">
+      {Array.from({ length: 7 }, (_, i) => {
+        const filled = i < done;
+        const metTarget = done >= target;
+        return (
+          <div
+            key={i}
+            className={`w-2 h-2 rounded-full ${
+              filled
+                ? metTarget
+                  ? "bg-success"
+                  : "bg-primary"
+                : "bg-outline-variant"
+            } ${i >= target ? "opacity-35" : ""}`}
+            style={
+              i === target - 1 && !metTarget
+                ? { outline: "1.5px solid var(--color-primary)", outlineOffset: 1 }
+                : undefined
+            }
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function BooleanRow({ metric, entry, date, weeklyDone }: MetricRowProps) {
   const fetcher = useFetcher();
   const isChecked = entry?.value === 1;
   const optimisticChecked =
     fetcher.formData ? fetcher.formData.get("value") === "1" : isChecked;
 
-  const subtitle = optimisticChecked ? "" : "Not tracked";
+  const isWeekly = metric.weeklyTarget != null;
+  const weeklyMet = isWeekly && weeklyDone >= metric.weeklyTarget!;
+
+  let subtitle: string;
+  if (isWeekly) {
+    subtitle = weeklyMet
+      ? `${weeklyDone} / ${metric.weeklyTarget} this week · done`
+      : `${weeklyDone} / ${metric.weeklyTarget} this week`;
+  } else {
+    subtitle = optimisticChecked ? "" : "Not tracked";
+  }
 
   return (
     <div className="bg-bg-card rounded-xl p-4 flex items-center gap-3">
       <Link to={`/metrics/${metric.id}`} className="flex-1 min-w-0">
-        <div className="font-heading font-semibold text-base text-text">{metric.name}</div>
-        {subtitle && <div className="text-sm text-text-muted mt-0.5">{subtitle}</div>}
+        <div className="flex items-center gap-2 mb-0.5">
+          <div className="font-heading font-semibold text-base text-text">{metric.name}</div>
+          {isWeekly && <FreqBadge weeklyTarget={metric.weeklyTarget!} />}
+        </div>
+        {isWeekly ? (
+          <WeekDots done={weeklyDone} target={metric.weeklyTarget!} />
+        ) : (
+          subtitle && <div className="text-sm text-text-muted mt-0.5">{subtitle}</div>
+        )}
       </Link>
       <fetcher.Form method="post">
         <input type="hidden" name="intent" value="log-entry" />
         <input type="hidden" name="metricId" value={metric.id} />
         <input type="hidden" name="date" value={date} />
         <input type="hidden" name="value" value={optimisticChecked ? "0" : "1"} />
-        <button type="submit" className="min-w-[44px] min-h-[44px] flex items-center justify-center">
-          {optimisticChecked ? <CheckCircle /> : <EmptyCircle />}
-        </button>
+        {isWeekly ? (
+          <button
+            type="submit"
+            className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+              optimisticChecked ? "bg-success" : "bg-outline-variant"
+            }`}
+          >
+            {optimisticChecked && (
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            )}
+          </button>
+        ) : (
+          <button type="submit" className="min-w-[44px] min-h-[44px] flex items-center justify-center">
+            {optimisticChecked ? <CheckCircle /> : <EmptyCircle />}
+          </button>
+        )}
       </fetcher.Form>
     </div>
   );
 }
 
-function NumericRow({ metric, entry, date }: MetricRowProps) {
+function NumericRow({ metric, entry, date, weeklyDone }: MetricRowProps) {
   const fetcher = useFetcher();
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState(entry?.value?.toString() ?? "");
@@ -73,10 +143,15 @@ function NumericRow({ metric, entry, date }: MetricRowProps) {
   const direction = metric.goalDirection;
   const goalMet = entry?.value != null && isGoalMet(entry.value, metric.goal, direction);
   const unitLabel = metric.unit ?? "";
+  const isWeekly = metric.weeklyTarget != null;
 
   let subtitle: string;
-  if (metric.goal == null || direction == null) {
-    // No goal set
+  if (isWeekly) {
+    const weeklyMet = weeklyDone >= metric.weeklyTarget!;
+    subtitle = weeklyMet
+      ? `${weeklyDone} / ${metric.weeklyTarget} this week · done`
+      : `${weeklyDone} / ${metric.weeklyTarget} this week`;
+  } else if (metric.goal == null || direction == null) {
     subtitle = entry?.value != null
       ? `${entry.value} ${unitLabel}`.trim()
       : "Not tracked";
@@ -89,7 +164,6 @@ function NumericRow({ metric, entry, date }: MetricRowProps) {
   } else if (direction === "at_most") {
     subtitle = `${entry.value} / ${metric.goal} ${unitLabel}`.trim();
   } else {
-    // approximately
     subtitle = `${entry.value} / ${metric.goal} ${unitLabel}`.trim();
   }
 
@@ -106,8 +180,15 @@ function NumericRow({ metric, entry, date }: MetricRowProps) {
   return (
     <div className="bg-bg-card rounded-xl p-4 flex items-center gap-3">
       <Link to={`/metrics/${metric.id}`} className="flex-1 min-w-0">
-        <div className="font-heading font-semibold text-base text-text">{metric.name}</div>
-        <div className="text-sm text-text-muted mt-0.5">{subtitle}</div>
+        <div className="flex items-center gap-2 mb-0.5">
+          <div className="font-heading font-semibold text-base text-text">{metric.name}</div>
+          {isWeekly && <FreqBadge weeklyTarget={metric.weeklyTarget!} />}
+        </div>
+        {isWeekly ? (
+          <WeekDots done={weeklyDone} target={metric.weeklyTarget!} />
+        ) : (
+          <div className="text-sm text-text-muted mt-0.5">{subtitle}</div>
+        )}
       </Link>
       {editing ? (
         <div className="flex items-center gap-2">

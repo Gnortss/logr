@@ -1,4 +1,4 @@
-import type { BooleanStats, NumericStats, Trend } from "~/lib/stats.server";
+import type { BooleanStats, NumericStats, Trend, WeeklyBooleanStats } from "~/lib/stats.server";
 
 interface BooleanStatsPanelProps {
   type: "boolean";
@@ -13,9 +13,17 @@ interface NumericStatsPanelProps {
   hasGoal: boolean;
 }
 
-type StatsPanelProps = BooleanStatsPanelProps | NumericStatsPanelProps;
+interface WeeklyBooleanStatsPanelProps {
+  type: "weekly-boolean";
+  stats: WeeklyBooleanStats;
+}
+
+type StatsPanelProps = BooleanStatsPanelProps | NumericStatsPanelProps | WeeklyBooleanStatsPanelProps;
 
 export function StatsPanel(props: StatsPanelProps) {
+  if (props.type === "weekly-boolean") {
+    return <WeeklyBooleanStatsPanel stats={props.stats} />;
+  }
   if (props.type === "boolean") {
     return <BooleanStatsPanel stats={props.stats} />;
   }
@@ -89,6 +97,26 @@ function NumericStatsPanel({ stats, trend, unit, hasGoal }: { stats: NumericStat
           <CompletionRing percent={stats.goalHitRate} />
         </div>
       )}
+    </div>
+  );
+}
+
+function WeeklyBooleanStatsPanel({ stats }: { stats: WeeklyBooleanStats }) {
+  return (
+    <div className="space-y-3">
+      <div className="bg-primary-fixed rounded-xl p-4 flex items-center gap-3">
+        <div className="text-3xl font-bold font-heading text-primary">{stats.thisWeekTarget}×</div>
+        <div>
+          <div className="text-sm text-text-muted">per week target</div>
+          <div className="text-xs text-text-muted">any {stats.thisWeekTarget} of 7 days</div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <StatCard label="This Week" value={`${stats.thisWeekDone} / ${stats.thisWeekTarget}`} sublabel="days" />
+        <StatCard label="Weekly Rate" value={`${Math.round(stats.weeklyRate)}%`} />
+        <StatCard label="Weeks Perfect" value={stats.weeksPerfect} />
+        <StatCard label="Total Logged" value={stats.totalLogged} sublabel="days" />
+      </div>
     </div>
   );
 }

@@ -65,6 +65,72 @@ export function computeBooleanStats(entries: Entry[], from: string, to: string):
   };
 }
 
+export interface WeeklyBooleanStats {
+  thisWeekDone: number;
+  thisWeekTarget: number;
+  weeklyRate: number;
+  weeksPerfect: number;
+  totalLogged: number;
+}
+
+export function computeWeeklyBooleanStats(
+  entries: Entry[],
+  weeklyTarget: number,
+  from: string,
+  to: string
+): WeeklyBooleanStats {
+  const doneSet = new Set(entries.filter((e) => e.value === 1).map((e) => e.date));
+  const totalLogged = doneSet.size;
+
+  // Group entries by ISO week (Mon-Sun)
+  const weekBuckets = new Map<string, number>();
+  for (const dateStr of doneSet) {
+    const d = parseDateUTC(dateStr);
+    const dow = d.getUTCDay();
+    const mondayOffset = dow === 0 ? -6 : 1 - dow;
+    const monday = new Date(d);
+    monday.setUTCDate(monday.getUTCDate() + mondayOffset);
+    const weekKey = monday.toISOString().slice(0, 10);
+    weekBuckets.set(weekKey, (weekBuckets.get(weekKey) ?? 0) + 1);
+  }
+
+  // Count total weeks in range and how many met target
+  const fromDate = parseDateUTC(from);
+  const fromDow = fromDate.getUTCDay();
+  const firstMondayOffset = fromDow === 0 ? -6 : 1 - fromDow;
+  const firstMonday = new Date(fromDate);
+  firstMonday.setUTCDate(firstMonday.getUTCDate() + firstMondayOffset);
+
+  let totalWeeks = 0;
+  let weeksPerfect = 0;
+  const current = new Date(firstMonday);
+  while (current.toISOString().slice(0, 10) <= to) {
+    totalWeeks++;
+    const weekKey = current.toISOString().slice(0, 10);
+    if ((weekBuckets.get(weekKey) ?? 0) >= weeklyTarget) {
+      weeksPerfect++;
+    }
+    current.setUTCDate(current.getUTCDate() + 7);
+  }
+
+  // Current week done count
+  const todayDate = parseDateUTC(to);
+  const todayDow = todayDate.getUTCDay();
+  const thisMondayOffset = todayDow === 0 ? -6 : 1 - todayDow;
+  const thisMonday = new Date(todayDate);
+  thisMonday.setUTCDate(thisMonday.getUTCDate() + thisMondayOffset);
+  const thisWeekKey = thisMonday.toISOString().slice(0, 10);
+  const thisWeekDone = weekBuckets.get(thisWeekKey) ?? 0;
+
+  return {
+    thisWeekDone,
+    thisWeekTarget: weeklyTarget,
+    weeklyRate: totalWeeks > 0 ? (weeksPerfect / totalWeeks) * 100 : 0,
+    weeksPerfect,
+    totalLogged,
+  };
+}
+
 export interface NumericStats {
   average: number;
   min: number;

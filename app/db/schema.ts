@@ -24,6 +24,7 @@ export const metrics = sqliteTable("metrics", {
   unit: text("unit"),
   goal: real("goal"),
   goalDirection: text("goal_direction"),
+  weeklyTarget: integer("weekly_target"),
   sortOrder: integer("sort_order").notNull().default(0),
   archived: integer("archived").notNull().default(0),
   createdAt: text("created_at").notNull(),

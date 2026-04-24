@@ -4,12 +4,12 @@ import type { Route } from "./+types/_app._index";
 import { requireAuth } from "~/lib/auth.server";
 import { getDb } from "~/lib/db.server";
 import { metrics, metricEntries } from "~/db/schema";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, gte, lte } from "drizzle-orm";
 import { GOAL_DIRECTIONS } from "~/lib/types";
 import { MetricForm } from "~/components/metric-form";
 import { MetricRow } from "~/components/metric-row";
 import { DateNav } from "~/components/date-nav";
-import { today } from "~/lib/date";
+import { today, getWeekDays } from "~/lib/date";
 import {
   DndContext,
   closestCenter,
@@ -56,11 +56,41 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   const entriesByMetricId = new Map(dayEntries.map((e) => [e.metricId, e]));
 
+  // For weekly metrics, count how many days this week have entries
+  const weeklyMetricIds = userMetrics.filter((m) => m.weeklyTarget != null).map((m) => m.id);
+  const weekDays = getWeekDays(date);
+  const weekStart = weekDays[0];
+  const weekEnd = weekDays[6];
+
+  let weeklyDoneCounts = new Map<number, number>();
+  if (weeklyMetricIds.length > 0) {
+    const weekEntries = await db
+      .select({ metricId: metricEntries.metricId, date: metricEntries.date, value: metricEntries.value })
+      .from(metricEntries)
+      .where(
+        and(
+          gte(metricEntries.date, weekStart),
+          lte(metricEntries.date, weekEnd)
+        )
+      )
+      .all();
+
+    const weeklyIdSet = new Set(weeklyMetricIds);
+    for (const e of weekEntries) {
+      if (!weeklyIdSet.has(e.metricId)) continue;
+      // For boolean: value === 1 counts. For numeric: any entry counts.
+      const metric = userMetrics.find((m) => m.id === e.metricId);
+      const counts = metric?.type === "boolean" ? (e.value === 1 ? 1 : 0) : 1;
+      weeklyDoneCounts.set(e.metricId, (weeklyDoneCounts.get(e.metricId) ?? 0) + counts);
+    }
+  }
+
   return {
     date,
     metrics: userMetrics.map((m) => ({
       ...m,
       entry: entriesByMetricId.get(m.id) ?? null,
+      weeklyDone: weeklyDoneCounts.get(m.id) ?? 0,
     })),
   };
 }
@@ -90,6 +120,8 @@ export async function action({ request, context }: Route.ActionArgs) {
     const goalStr = formData.get("goal") as string;
     const goal = goalStr ? parseFloat(goalStr) : null;
     const goalDirection = (formData.get("goalDirection") as string) || null;
+    const weeklyTargetStr = formData.get("weeklyTarget") as string;
+    const weeklyTarget = weeklyTargetStr ? parseInt(weeklyTargetStr) : null;
 
     if (!name || !type) return { error: "Name and type are required." };
     if (type !== "boolean" && goal != null && !goalDirection) {
@@ -97,6 +129,9 @@ export async function action({ request, context }: Route.ActionArgs) {
     }
     if (goalDirection && !GOAL_DIRECTIONS.includes(goalDirection as any)) {
       return { error: "Invalid goal direction." };
+    }
+    if (weeklyTarget != null && (weeklyTarget < 1 || weeklyTarget > 6)) {
+      return { error: "Weekly target must be between 1 and 6." };
     }
 
     const maxOrder = await db
@@ -109,6 +144,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       userId: user.userId,
       name, type, unit, goal,
       goalDirection: goal != null ? goalDirection : null,
+      weeklyTarget,
       sortOrder: (maxOrder?.max ?? -1) + 1,
       createdAt: now,
     });
@@ -122,15 +158,20 @@ export async function action({ request, context }: Route.ActionArgs) {
     const goalStr = formData.get("goal") as string;
     const goal = goalStr ? parseFloat(goalStr) : null;
     const goalDirection = (formData.get("goalDirection") as string) || null;
+    const weeklyTargetStr = formData.get("weeklyTarget") as string;
+    const weeklyTarget = weeklyTargetStr ? parseInt(weeklyTargetStr) : null;
 
     if (!name) return { error: "Name is required." };
     if (goalDirection && !GOAL_DIRECTIONS.includes(goalDirection as any)) {
       return { error: "Invalid goal direction." };
     }
+    if (weeklyTarget != null && (weeklyTarget < 1 || weeklyTarget > 6)) {
+      return { error: "Weekly target must be between 1 and 6." };
+    }
 
     await db
       .update(metrics)
-      .set({ name, goal, goalDirection: goal != null ? goalDirection : null })
+      .set({ name, goal, goalDirection: goal != null ? goalDirection : null, weeklyTarget })
       .where(and(eq(metrics.id, metricId), eq(metrics.userId, user.userId)));
 
     return { ok: true };
@@ -169,7 +210,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   return { error: "Unknown intent." };
 }
 
-function SortableMetricRow({ metric, entry, date }: { metric: any; entry: any; date: string }) {
+function SortableMetricRow({ metric, entry, date, weeklyDone }: { metric: any; entry: any; date: string; weeklyDone: number }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: metric.id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -191,7 +232,7 @@ function SortableMetricRow({ metric, entry, date }: { metric: any; entry: any; d
         </svg>
       </button>
       <div className="flex-1">
-        <MetricRow metric={metric} entry={entry} date={date} />
+        <MetricRow metric={metric} entry={entry} date={date} weeklyDone={weeklyDone} />
       </div>
     </div>
   );
@@ -245,13 +286,19 @@ export default function TodayView() {
         <div className="px-4 pt-2">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-heading font-semibold text-lg text-text">Core Metrics</h2>
-            <span className="text-sm text-text-muted">{orderedMetrics.filter(m => (m.goal != null && m.goalDirection != null) || m.type === 'boolean').length} active goals</span>
+            <span className="text-sm text-text-muted">
+              {orderedMetrics.filter(m =>
+                m.weeklyTarget != null ||
+                (m.goal != null && m.goalDirection != null) ||
+                m.type === 'boolean'
+              ).length} active goals
+            </span>
           </div>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={orderedMetrics.map((m) => m.id)} strategy={verticalListSortingStrategy}>
               <div className="flex flex-col gap-3">
                 {orderedMetrics.map((m) => (
-                  <SortableMetricRow key={m.id} metric={m} entry={m.entry} date={date} />
+                  <SortableMetricRow key={m.id} metric={m} entry={m.entry} date={date} weeklyDone={m.weeklyDone} />
                 ))}
               </div>
             </SortableContext>
