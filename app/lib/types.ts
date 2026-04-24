@@ -27,6 +27,13 @@ export type GoalDirection = (typeof GOAL_DIRECTIONS)[number];
 
 export const APPROX_TOLERANCE = 0.1; // 10% tolerance for "approximately" direction
 
+export const MAX_WEEKLY_TARGET = 6;
+export const MIN_WEEKLY_TARGET = 1;
+
+export function isValidWeeklyTarget(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= MIN_WEEKLY_TARGET && value <= MAX_WEEKLY_TARGET;
+}
+
 export function isGoalMet(
   value: number,
   goal: number | null,
