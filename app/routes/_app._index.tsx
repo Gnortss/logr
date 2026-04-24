@@ -205,7 +205,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   return { error: "Unknown intent." };
 }
 
-function SortableMetricRow({ metric, entry, date }: { metric: any; entry: any; date: string }) {
+function SortableMetricRow({ metric, entry, date, weeklyDone }: { metric: any; entry: any; date: string; weeklyDone: number }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: metric.id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -227,7 +227,7 @@ function SortableMetricRow({ metric, entry, date }: { metric: any; entry: any; d
         </svg>
       </button>
       <div className="flex-1">
-        <MetricRow metric={metric} entry={entry} date={date} />
+        <MetricRow metric={metric} entry={entry} date={date} weeklyDone={weeklyDone} />
       </div>
     </div>
   );
@@ -281,13 +281,19 @@ export default function TodayView() {
         <div className="px-4 pt-2">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-heading font-semibold text-lg text-text">Core Metrics</h2>
-            <span className="text-sm text-text-muted">{orderedMetrics.filter(m => (m.goal != null && m.goalDirection != null) || m.type === 'boolean').length} active goals</span>
+            <span className="text-sm text-text-muted">
+              {orderedMetrics.filter(m =>
+                m.weeklyTarget != null ||
+                (m.goal != null && m.goalDirection != null) ||
+                m.type === 'boolean'
+              ).length} active goals
+            </span>
           </div>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={orderedMetrics.map((m) => m.id)} strategy={verticalListSortingStrategy}>
               <div className="flex flex-col gap-3">
                 {orderedMetrics.map((m) => (
-                  <SortableMetricRow key={m.id} metric={m} entry={m.entry} date={date} />
+                  <SortableMetricRow key={m.id} metric={m} entry={m.entry} date={date} weeklyDone={m.weeklyDone} />
                 ))}
               </div>
             </SortableContext>
