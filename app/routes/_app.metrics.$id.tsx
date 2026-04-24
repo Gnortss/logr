@@ -127,7 +127,7 @@ export default function MetricDetailView() {
       </div>
 
       <div>
-        <Heatmap entries={entries} from={from} to={to} type={metric.type} goal={metric.goal} goalDirection={metric.goalDirection as GoalDirection | null} />
+        <Heatmap entries={entries} from={from} to={to} type={metric.type} goal={metric.goal} goalDirection={metric.goalDirection as GoalDirection | null} weeklyTarget={null} />
       </div>
 
       {entries.length > 0 && (

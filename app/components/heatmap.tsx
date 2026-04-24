@@ -8,9 +8,10 @@ interface HeatmapProps {
   type: "boolean" | string;
   goal: number | null;
   goalDirection: GoalDirection | null;
+  weeklyTarget: number | null;
 }
 
-export function Heatmap({ entries, from, to, type, goal, goalDirection }: HeatmapProps) {
+export function Heatmap({ entries, from, to, type, goal, goalDirection, weeklyTarget }: HeatmapProps) {
   const entryMap = new Map(entries.map((e) => [e.date, e.value]));
 
   const values = entries.map((e) => e.value).filter((v) => v > 0);
@@ -77,6 +78,14 @@ export function Heatmap({ entries, from, to, type, goal, goalDirection }: Heatma
           <span>MORE</span>
         </div>
       </div>
+      {weeklyTarget != null && (
+        <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-primary-fixed rounded-lg">
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth={2} strokeLinecap="round">
+            <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+          </svg>
+          <span className="text-xs text-primary font-medium">Target: {weeklyTarget} days / week</span>
+        </div>
+      )}
       <div className="overflow-x-auto">
         <div
           className="inline-grid gap-1"
@@ -108,6 +117,33 @@ export function Heatmap({ entries, from, to, type, goal, goalDirection }: Heatma
           ))}
         </div>
       </div>
+      {weeklyTarget != null && (
+        <div className="mt-2">
+          <div
+            className="inline-grid gap-1"
+            style={{
+              gridTemplateRows: "4px",
+              gridTemplateColumns: `20px repeat(${totalWeeks}, 16px)`,
+            }}
+          >
+            <div />
+            {Array.from({ length: totalWeeks }, (_, wi) => {
+              const weekCells = cells.filter((c) => c.weekIndex === wi);
+              const daysLogged = weekCells.filter(
+                (c) => c.value != null && (type === "boolean" ? c.value === 1 : c.value > 0)
+              ).length;
+              const met = daysLogged >= weeklyTarget;
+              return (
+                <div
+                  key={wi}
+                  className={`rounded-sm ${met ? "bg-primary" : "bg-surface-container-highest"}`}
+                />
+              );
+            })}
+          </div>
+          <div className="text-[9px] text-text-muted mt-1 ml-5">weekly target met</div>
+        </div>
+      )}
     </div>
   );
 }
