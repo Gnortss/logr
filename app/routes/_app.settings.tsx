@@ -62,11 +62,20 @@ export async function action({ request, context }: Route.ActionArgs) {
     const goalStr = formData.get("goal") as string;
     const goal = goalStr ? parseFloat(goalStr) : null;
     const goalDirection = (formData.get("goalDirection") as string) || null;
+    const weeklyTargetStr = formData.get("weeklyTarget") as string;
+    const weeklyTarget = weeklyTargetStr ? parseInt(weeklyTargetStr) : null;
     if (!name) return { error: "Name is required." };
     if (goalDirection && !GOAL_DIRECTIONS.includes(goalDirection as any)) {
       return { error: "Invalid goal direction." };
     }
-    await db.update(metrics).set({ name, goal, goalDirection: goal != null ? goalDirection : null })
+    if (weeklyTarget != null && (weeklyTarget < 1 || weeklyTarget > 6)) {
+      return { error: "Weekly target must be between 1 and 6." };
+    }
+    await db.update(metrics).set({
+      name, goal,
+      goalDirection: goal != null ? goalDirection : null,
+      weeklyTarget,
+    })
       .where(and(eq(metrics.id, metricId), eq(metrics.userId, user.userId)));
     return { ok: true };
   }
@@ -117,7 +126,14 @@ export default function SettingsView() {
             <div key={m.id} className="flex items-start justify-between bg-bg-card rounded-xl px-4 py-3">
               <div className="flex flex-col gap-1">
                 <span className="text-text font-medium">{m.name}</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-secondary-container text-secondary font-medium w-fit">{m.type}</span>
+                <div className="flex gap-1.5 items-center flex-wrap">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-secondary-container text-secondary font-medium w-fit">{m.type}</span>
+                  {m.weeklyTarget != null && (
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-surface-container-high text-text-muted border border-outline-variant">
+                      {m.weeklyTarget}× / week
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => setEditingMetric(m)}
@@ -204,6 +220,7 @@ export default function SettingsView() {
             unit: editingMetric.unit,
             goal: editingMetric.goal,
             goalDirection: editingMetric.goalDirection,
+            weeklyTarget: editingMetric.weeklyTarget,
           }}
         />
       )}

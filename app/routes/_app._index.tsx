@@ -158,15 +158,20 @@ export async function action({ request, context }: Route.ActionArgs) {
     const goalStr = formData.get("goal") as string;
     const goal = goalStr ? parseFloat(goalStr) : null;
     const goalDirection = (formData.get("goalDirection") as string) || null;
+    const weeklyTargetStr = formData.get("weeklyTarget") as string;
+    const weeklyTarget = weeklyTargetStr ? parseInt(weeklyTargetStr) : null;
 
     if (!name) return { error: "Name is required." };
     if (goalDirection && !GOAL_DIRECTIONS.includes(goalDirection as any)) {
       return { error: "Invalid goal direction." };
     }
+    if (weeklyTarget != null && (weeklyTarget < 1 || weeklyTarget > 6)) {
+      return { error: "Weekly target must be between 1 and 6." };
+    }
 
     await db
       .update(metrics)
-      .set({ name, goal, goalDirection: goal != null ? goalDirection : null })
+      .set({ name, goal, goalDirection: goal != null ? goalDirection : null, weeklyTarget })
       .where(and(eq(metrics.id, metricId), eq(metrics.userId, user.userId)));
 
     return { ok: true };

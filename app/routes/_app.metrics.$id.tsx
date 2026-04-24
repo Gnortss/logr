@@ -5,7 +5,7 @@ import { getDb } from "~/lib/db.server";
 import { metrics, metricEntries } from "~/db/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { addDays, today } from "~/lib/date";
-import { computeBooleanStats, computeNumericStats, computeTrend } from "~/lib/stats.server";
+import { computeBooleanStats, computeNumericStats, computeTrend, computeWeeklyBooleanStats } from "~/lib/stats.server";
 import type { GoalDirection } from "~/lib/types";
 import { Heatmap } from "~/components/heatmap";
 import { StatsPanel } from "~/components/stats-panel";
@@ -42,7 +42,11 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   let stats;
   let trend;
   if (metric.type === "boolean") {
-    stats = computeBooleanStats(entries, from, to);
+    if (metric.weeklyTarget != null) {
+      stats = computeWeeklyBooleanStats(entries, metric.weeklyTarget, from, to);
+    } else {
+      stats = computeBooleanStats(entries, from, to);
+    }
   } else {
     stats = computeNumericStats(entries, metric.goal, metric.goalDirection as GoalDirection | null);
     trend = computeTrend(entries);
@@ -116,18 +120,24 @@ export default function MetricDetailView() {
             Goal: {metric.goalDirection === "at_least" ? "≥" : metric.goalDirection === "at_most" ? "≤" : "≈"} {metric.goal} {metric.unit ?? ""}
           </span>
         )}
+        {metric.weeklyTarget != null && (
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary-fixed text-primary">
+            {metric.weeklyTarget}× / week
+          </span>
+        )}
       </div>
 
       <div>
-        <StatsPanel
-          type={isBoolean ? "boolean" : "numeric"}
-          stats={stats as any}
-          {...(!isBoolean && { trend: trend as any, unit: metric.unit, hasGoal: metric.goal != null })}
-        />
+        {isBoolean && metric.weeklyTarget != null
+          ? <StatsPanel type="weekly-boolean" stats={stats as any} />
+          : isBoolean
+          ? <StatsPanel type="boolean" stats={stats as any} />
+          : <StatsPanel type="numeric" stats={stats as any} trend={trend as any} unit={metric.unit} hasGoal={metric.goal != null} />
+        }
       </div>
 
       <div>
-        <Heatmap entries={entries} from={from} to={to} type={metric.type} goal={metric.goal} goalDirection={metric.goalDirection as GoalDirection | null} weeklyTarget={null} />
+        <Heatmap entries={entries} from={from} to={to} type={metric.type} goal={metric.goal} goalDirection={metric.goalDirection as GoalDirection | null} weeklyTarget={metric.weeklyTarget} />
       </div>
 
       {entries.length > 0 && (
