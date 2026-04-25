@@ -1,28 +1,42 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-heading: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  --color-primary: #334537;
-  --color-primary-container: #4a5d4e;
-  --color-primary-fixed: #d3e8d5;
-  --color-primary-fixed-dim: #b7ccb9;
-  --color-bg: #fbf9f5;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji";
+  --font-heading: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+    sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono",
+    monospace;
+  --color-primary: #8b7fe8;
+  --color-primary-hover: #6e63c8;
+  --color-primary-container: #6e63c8;
+  --color-primary-fixed: #eceaff;
+  --color-primary-fixed-dim: #dad6ff;
+  --color-bg: #f9f8f6;
   --color-bg-card: #ffffff;
-  --color-surface-dim: #dbdad6;
-  --color-surface-container: #efeeea;
-  --color-surface-container-low: #f5f3ef;
-  --color-surface-container-high: #eae8e4;
-  --color-surface-container-highest: #e4e2de;
-  --color-text: #1b1c1a;
-  --color-text-muted: #434843;
-  --color-outline: #737872;
-  --color-outline-variant: #c3c8c1;
-  --color-success: #334537;
-  --color-danger: #ba1a1a;
-  --color-secondary: #5b6054;
-  --color-secondary-container: #dde2d3;
-  --color-tertiary: #464136;
-  --color-tertiary-container: #5e584c;
+  --color-bg-subtle: #f3f1ee;
+  --color-surface-dim: #d1ccc5;
+  --color-surface-container: #f3f2ef;
+  --color-surface-container-low: #fdfcfb;
+  --color-surface-container-high: #f3f2ef;
+  --color-surface-container-highest: #e6e3de;
+  --color-text: #1c1917;
+  --color-text-muted: #5e5a55;
+  --color-outline: #9c9891;
+  --color-outline-variant: #e6e3de;
+  --color-success: #2f9e86;
+  --color-success-subtle: #d5f3ec;
+  --color-danger: #e85555;
+  --color-danger-subtle: #ffe5e5;
+  --color-secondary: #5e5a55;
+  --color-secondary-container: #f3f2ef;
+  --color-tertiary: #f07c56;
+  --color-tertiary-container: #ffeee5;
+  --color-info: #3d8eea;
+  --color-info-subtle: #deeeff;
+  --color-border: #e6e3de;
+  --color-border-strong: #d1ccc5;
+  --color-border-focus: #8b7fe8;
+  --color-shadow-focus: 0 0 0 3px rgba(139, 127, 232, 0.28);
 }

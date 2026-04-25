@@ -1,4 +1,5 @@
 import { useLoaderData } from "react-router";
+import { useState } from "react";
 import type { Route } from "./+types/_app.metrics.$id";
 import { requireAuth } from "~/lib/auth.server";
 import { getDb } from "~/lib/db.server";
@@ -95,57 +96,75 @@ export async function action({ request, context, params }: Route.ActionArgs) {
 export default function MetricDetailView() {
   const { metric, entries, stats, trend, from, to } = useLoaderData<typeof loader>();
   const isBoolean = metric.type === "boolean";
+  const [tab, setTab] = useState<"heatmap" | "stats">("heatmap");
 
   return (
-    <div className="p-4 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <a href="/" className="p-2 -ml-2 rounded-lg hover:bg-surface-container-high transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text">
-              <path d="m15 18-6-6 6-6"/>
+    <div className="flex flex-col">
+      {/* Header */}
+      <div className="px-4 pt-3.5 pb-3 border-b border-outline-variant">
+        <div className="flex items-center gap-2.5 mb-2.5">
+          <a href="/" className="p-1 -ml-1 rounded-lg hover:bg-surface-container-high transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
+              <path d="M19 12H5M12 5l-7 7 7 7"/>
             </svg>
           </a>
-          <h2 className="text-xl font-bold font-heading text-text">Deep Insights</h2>
         </div>
-        <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center">
-          <span className="text-xs font-semibold text-text-muted uppercase">{metric.type.slice(0, 3)}</span>
+        <div className="font-bold text-xl text-text tracking-tight mb-1.5">{metric.name}</div>
+        <div className="flex gap-1.5 items-center flex-wrap">
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-secondary-container text-secondary">{metric.type}</span>
+          {metric.unit && <span className="text-xs text-outline font-mono">{metric.unit}</span>}
+          {metric.goal != null && metric.goalDirection != null && (
+            <span className="text-xs text-outline font-mono">
+              · {metric.goalDirection === "at_least" ? "At least" : metric.goalDirection === "at_most" ? "At most" : "Approximately"} {metric.goal} {metric.unit ?? ""}
+            </span>
+          )}
+          {metric.weeklyTarget != null && (
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary-fixed text-primary">
+              {metric.weeklyTarget}× / week
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="bg-bg-card rounded-xl p-4">
-        <div className="text-lg font-heading font-semibold text-text mb-1">{metric.name}</div>
-        {metric.unit && <span className="text-sm text-text-muted">{metric.unit}</span>}
-        {metric.goal != null && metric.goalDirection != null && (
-          <span className="text-sm text-text-muted ml-2">
-            Goal: {metric.goalDirection === "at_least" ? "≥" : metric.goalDirection === "at_most" ? "≤" : "≈"} {metric.goal} {metric.unit ?? ""}
-          </span>
+      {/* Tabs */}
+      <div className="flex px-4 pt-2 gap-1 border-b border-outline-variant">
+        {(["heatmap", "stats"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`text-[13px] px-3.5 pb-2 pt-1.5 -mb-px ${
+              tab === t
+                ? "font-semibold text-primary border-b-2 border-primary"
+                : "font-normal text-text-muted border-b-2 border-transparent"
+            }`}
+          >
+            {t.charAt(0).toUpperCase() + t.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {tab === "heatmap" ? (
+          <Heatmap entries={entries} from={from} to={to} type={metric.type} goal={metric.goal} goalDirection={metric.goalDirection as GoalDirection | null} weeklyTarget={metric.weeklyTarget} />
+        ) : (
+          <>
+            {isBoolean && metric.weeklyTarget != null
+              ? <StatsPanel type="weekly-boolean" stats={stats as any} />
+              : isBoolean
+              ? <StatsPanel type="boolean" stats={stats as any} />
+              : <StatsPanel type="numeric" stats={stats as any} trend={trend as any} unit={metric.unit} hasGoal={metric.goal != null} />
+            }
+          </>
         )}
-        {metric.weeklyTarget != null && (
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary-fixed text-primary">
-            {metric.weeklyTarget}× / week
-          </span>
+
+        {entries.length > 0 && (
+          <div>
+            <h3 className="text-sm font-semibold font-heading text-text-muted mb-3 uppercase tracking-wide">Entries</h3>
+            <EntriesTable entries={entries} metricId={metric.id} type={metric.type} unit={metric.unit} />
+          </div>
         )}
       </div>
-
-      <div>
-        {isBoolean && metric.weeklyTarget != null
-          ? <StatsPanel type="weekly-boolean" stats={stats as any} />
-          : isBoolean
-          ? <StatsPanel type="boolean" stats={stats as any} />
-          : <StatsPanel type="numeric" stats={stats as any} trend={trend as any} unit={metric.unit} hasGoal={metric.goal != null} />
-        }
-      </div>
-
-      <div>
-        <Heatmap entries={entries} from={from} to={to} type={metric.type} goal={metric.goal} goalDirection={metric.goalDirection as GoalDirection | null} weeklyTarget={metric.weeklyTarget} />
-      </div>
-
-      {entries.length > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold font-heading text-text-muted mb-3 uppercase tracking-wide">Entries</h3>
-          <EntriesTable entries={entries} metricId={metric.id} type={metric.type} unit={metric.unit} />
-        </div>
-      )}
     </div>
   );
 }

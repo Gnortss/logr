@@ -1,5 +1,4 @@
 import { useFetcher, Link } from "react-router";
-import { useState } from "react";
 import { isGoalMet, type MetricType, type GoalDirection } from "~/lib/types";
 
 interface MetricRowProps {
@@ -15,28 +14,37 @@ interface MetricRowProps {
   entry: { value: number } | null;
   date: string;
   weeklyDone: number;
+  onValueTap?: () => void;
 }
 
-export function MetricRow({ metric, entry, date, weeklyDone }: MetricRowProps) {
+export function MetricRow({ metric, entry, date, weeklyDone, onValueTap }: MetricRowProps) {
   if (metric.type === "boolean") {
     return <BooleanRow metric={metric} entry={entry} date={date} weeklyDone={weeklyDone} />;
   }
-  return <NumericRow metric={metric} entry={entry} date={date} weeklyDone={weeklyDone} />;
+  return <NumericRow metric={metric} entry={entry} date={date} weeklyDone={weeklyDone} onValueTap={onValueTap} />;
 }
 
-function CheckCircle() {
+function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
-    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="20 6 9 17 4 12"/>
-      </svg>
-    </div>
-  );
-}
-
-function EmptyCircle() {
-  return (
-    <div className="w-8 h-8 rounded-full border-2 border-outline-variant flex-shrink-0" />
+    <button
+      onClick={onToggle}
+      className="flex-shrink-0 relative"
+      style={{
+        width: 46, height: 28, borderRadius: 14, border: "none",
+        background: on ? "var(--color-success)" : "var(--color-outline-variant)",
+        transition: "background 160ms ease", cursor: "pointer",
+      }}
+    >
+      <div
+        className="absolute rounded-full bg-white"
+        style={{
+          top: 4, width: 20, height: 20,
+          boxShadow: "0 1px 3px rgba(0,0,0,.18)",
+          transition: "left 160ms ease",
+          left: on ? 22 : 4,
+        }}
+      />
+    </button>
   );
 }
 
@@ -94,54 +102,54 @@ function BooleanRow({ metric, entry, date, weeklyDone }: MetricRowProps) {
     subtitle = optimisticChecked ? "" : "Not tracked";
   }
 
+  function handleToggle(e: React.MouseEvent) {
+    e.stopPropagation();
+    const formData = new FormData();
+    formData.set("intent", "log-entry");
+    formData.set("metricId", metric.id.toString());
+    formData.set("date", date);
+    formData.set("value", optimisticChecked ? "0" : "1");
+    fetcher.submit(formData, { method: "post" });
+  }
+
   return (
-    <div className="bg-bg-card rounded-xl p-4 flex items-center gap-3">
-      <Link to={`/metrics/${metric.id}`} className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          <div className="font-heading font-semibold text-base text-text">{metric.name}</div>
+    <div className="bg-bg-card rounded-[14px] px-3 flex items-center gap-2.5 border border-outline-variant" style={{ minHeight: 56, padding: "0 12px" }}>
+      <Link to={`/metrics/${metric.id}`} className="flex-1 min-w-0 py-2.5">
+        <div className="flex items-center gap-1.5" style={{ marginBottom: subtitle || isWeekly ? 3 : 0 }}>
+          <div className="font-medium text-[15px] text-text whitespace-nowrap overflow-hidden text-ellipsis">{metric.name}</div>
           {isWeekly && <FreqBadge weeklyTarget={metric.weeklyTarget!} />}
         </div>
         {isWeekly ? (
           <WeekDots done={weeklyDone} target={metric.weeklyTarget!} />
         ) : (
-          subtitle && <div className="text-sm text-text-muted mt-0.5">{subtitle}</div>
+          subtitle && <div className="text-xs text-outline font-mono mt-0.5">{subtitle}</div>
         )}
       </Link>
-      <fetcher.Form method="post">
-        <input type="hidden" name="intent" value="log-entry" />
-        <input type="hidden" name="metricId" value={metric.id} />
-        <input type="hidden" name="date" value={date} />
-        <input type="hidden" name="value" value={optimisticChecked ? "0" : "1"} />
-        {isWeekly ? (
-          <button
-            type="submit"
-            className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-              optimisticChecked ? "bg-success" : "bg-outline-variant"
-            }`}
-          >
-            {optimisticChecked && (
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
-            )}
-          </button>
-        ) : (
-          <button type="submit" className="min-w-[44px] min-h-[44px] flex items-center justify-center">
-            {optimisticChecked ? <CheckCircle /> : <EmptyCircle />}
-          </button>
-        )}
-      </fetcher.Form>
+      {isWeekly ? (
+        <button
+          onClick={handleToggle}
+          className={`w-8 h-8 rounded-[10px] flex items-center justify-center flex-shrink-0 ${
+            optimisticChecked ? "bg-success" : "bg-outline-variant"
+          }`}
+          style={{ transition: "background 160ms ease" }}
+        >
+          {optimisticChecked && (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          )}
+        </button>
+      ) : (
+        <Toggle on={optimisticChecked} onToggle={() => handleToggle({stopPropagation: () => {}} as React.MouseEvent)} />
+      )}
     </div>
   );
 }
 
-function NumericRow({ metric, entry, date, weeklyDone }: MetricRowProps) {
-  const fetcher = useFetcher();
-  const [editing, setEditing] = useState(false);
-  const [inputValue, setInputValue] = useState(entry?.value?.toString() ?? "");
-
+function NumericRow({ metric, entry, date, weeklyDone, onValueTap }: MetricRowProps) {
   const direction = metric.goalDirection;
   const goalMet = entry?.value != null && isGoalMet(entry.value, metric.goal, direction);
+  const numericMet = metric.goal != null && goalMet;
   const unitLabel = metric.unit ?? "";
   const isWeekly = metric.weeklyTarget != null;
 
@@ -167,58 +175,29 @@ function NumericRow({ metric, entry, date, weeklyDone }: MetricRowProps) {
     subtitle = `${entry.value} / ${metric.goal} ${unitLabel}`.trim();
   }
 
-  function handleSubmit() {
-    const val = parseFloat(inputValue);
-    if (isNaN(val)) return;
-    fetcher.submit(
-      { intent: "log-entry", metricId: metric.id.toString(), date, value: val.toString() },
-      { method: "post" }
-    );
-    setEditing(false);
-  }
-
   return (
-    <div className="bg-bg-card rounded-xl p-4 flex items-center gap-3">
-      <Link to={`/metrics/${metric.id}`} className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          <div className="font-heading font-semibold text-base text-text">{metric.name}</div>
+    <div className="bg-bg-card rounded-[14px] flex items-center gap-2.5 border border-outline-variant" style={{ minHeight: 56, padding: "0 12px" }}>
+      <Link to={`/metrics/${metric.id}`} className="flex-1 min-w-0 py-2.5">
+        <div className="flex items-center gap-1.5" style={{ marginBottom: isWeekly || subtitle ? 3 : 0 }}>
+          <div className="font-medium text-[15px] text-text whitespace-nowrap overflow-hidden text-ellipsis">{metric.name}</div>
           {isWeekly && <FreqBadge weeklyTarget={metric.weeklyTarget!} />}
         </div>
         {isWeekly ? (
           <WeekDots done={weeklyDone} target={metric.weeklyTarget!} />
         ) : (
-          <div className="text-sm text-text-muted mt-0.5">{subtitle}</div>
+          <div className={`text-xs font-mono mt-px ${numericMet ? "text-success" : "text-outline"}`}>{subtitle}</div>
         )}
       </Link>
-      {editing ? (
-        <div className="flex items-center gap-2">
-          <input type="number" step="any" value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-            autoFocus
-            className="w-20 px-3 py-2 rounded-lg bg-surface-container-high text-text text-right focus:outline-none focus:ring-2 focus:ring-primary" />
-          <button onClick={handleSubmit}
-            className="px-3 py-2 bg-primary text-white rounded-full text-sm font-medium min-h-[36px]">Save</button>
-          <button onClick={() => setEditing(false)}
-            className="px-2 py-2 text-text-muted text-sm min-h-[36px]">Cancel</button>
-        </div>
-      ) : goalMet ? (
-        <button
-          onClick={() => { setInputValue(entry?.value?.toString() ?? ""); setEditing(true); }}
-          className="min-w-[44px] min-h-[44px] flex items-center justify-center"
-        >
-          <CheckCircle />
-        </button>
-      ) : (
-        <button
-          onClick={() => { setInputValue(entry?.value?.toString() ?? ""); setEditing(true); }}
-          className="px-3 py-1.5 rounded-full bg-surface-container-high text-sm font-medium text-text-muted min-h-[36px]"
-        >
-          {metric.goal != null && direction === "at_least" && entry?.value != null
-            ? `${parseFloat(Math.max(0, metric.goal - entry.value).toFixed(2))} LEFT`
-            : "Log"}
-        </button>
-      )}
+      <div
+        onClick={(e) => { e.stopPropagation(); onValueTap?.(); }}
+        className="cursor-pointer font-mono text-[15px] font-semibold min-w-[44px] text-right flex-shrink-0"
+        style={{ color: numericMet ? 'var(--color-success)' : entry?.value == null ? 'var(--color-outline)' : 'var(--color-text)', padding: '10px 0' }}
+      >
+        {entry?.value == null ? "—" : `${entry.value}`}
+        {entry?.value != null && metric.unit && (
+          <span className="text-[11px] text-outline ml-0.5">{metric.unit}</span>
+        )}
+      </div>
     </div>
   );
 }

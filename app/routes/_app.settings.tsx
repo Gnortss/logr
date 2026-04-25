@@ -114,20 +114,27 @@ export default function SettingsView() {
   const archivedMetrics = allMetrics.filter((m) => m.archived);
 
   return (
-    <div className="p-4 space-y-8">
-      <div>
-        <Link to="/" className="text-primary text-sm font-semibold font-heading">← Back</Link>
+    <div>
+      {/* Header */}
+      <div className="flex items-center gap-2.5 px-4 py-3.5 border-b border-outline-variant">
+        <Link to="/" className="p-1 -ml-1 rounded-lg hover:bg-surface-container-high transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
+            <path d="M19 12H5M12 5l-7 7 7 7"/>
+          </svg>
+        </Link>
+        <div className="font-semibold text-[17px] text-text">Settings</div>
       </div>
 
+      <div className="p-4 space-y-8">
       <section>
-        <h2 className="text-lg font-semibold font-heading text-text mb-3">Metrics</h2>
-        <div className="space-y-3">
-          {activeMetrics.map((m) => (
-            <div key={m.id} className="flex items-start justify-between bg-bg-card rounded-xl px-4 py-3">
-              <div className="flex flex-col gap-1">
-                <span className="text-text font-medium">{m.name}</span>
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-outline mb-2">Metrics</div>
+        <div className="bg-bg-card border border-outline-variant rounded-[14px] overflow-hidden">
+          {activeMetrics.map((m, i) => (
+            <div key={m.id} className={`flex items-center px-3.5 py-3 gap-2.5 ${i < activeMetrics.length - 1 ? "border-b border-outline-variant" : ""}`}>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-text mb-1">{m.name}</div>
                 <div className="flex gap-1.5 items-center flex-wrap">
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-secondary-container text-secondary font-medium w-fit">{m.type}</span>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-secondary-container text-secondary">{m.type}</span>
                   {m.weeklyTarget != null && (
                     <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-surface-container-high text-text-muted border border-outline-variant">
                       {m.weeklyTarget}× / week
@@ -135,7 +142,7 @@ export default function SettingsView() {
                   )}
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                 <button onClick={() => setEditingMetric(m)}
                   className="text-xs text-primary font-medium min-h-[36px] px-2">Edit</button>
                 <fetcher.Form method="post">
@@ -160,11 +167,11 @@ export default function SettingsView() {
 
         {archivedMetrics.length > 0 && (
           <div className="mt-4">
-            <h3 className="text-sm font-medium font-heading text-text-muted mb-2">Archived</h3>
-            <div className="space-y-3">
-              {archivedMetrics.map((m) => (
-                <div key={m.id} className="flex items-center justify-between bg-bg-card rounded-xl px-4 py-3 opacity-60">
-                  <span className="text-text">{m.name}</span>
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-outline mb-2">Archived</div>
+            <div className="bg-bg-card border border-outline-variant rounded-[14px] overflow-hidden">
+              {archivedMetrics.map((m, i) => (
+                <div key={m.id} className={`flex items-center px-3.5 py-3 gap-2.5 opacity-60 ${i < archivedMetrics.length - 1 ? "border-b border-outline-variant" : ""}`}>
+                  <span className="flex-1 text-sm text-text">{m.name}</span>
                   <fetcher.Form method="post">
                     <input type="hidden" name="intent" value="unarchive-metric" />
                     <input type="hidden" name="metricId" value={m.id} />
@@ -224,6 +231,7 @@ export default function SettingsView() {
           }}
         />
       )}
+      </div>
     </div>
   );
 }

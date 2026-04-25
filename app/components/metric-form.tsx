@@ -36,10 +36,18 @@ export function MetricForm({ open, onClose, metric }: MetricFormProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-bg-card rounded-t-2xl p-6 pb-8">
-        <h2 className="text-lg font-semibold font-heading text-text mb-4">
-          {isEdit ? "Edit Metric" : "Add Metric"}
-        </h2>
+      <div className="relative w-full max-w-lg bg-bg-card rounded-t-[28px] p-4 pb-8 max-h-[90%] overflow-y-auto">
+        <div className="w-9 h-1 rounded-full bg-border-strong mx-auto mb-4" />
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-[17px] font-semibold text-text">
+            {isEdit ? "Edit metric" : "New metric"}
+          </h2>
+          <button type="button" onClick={onClose} className="text-outline p-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
         <Form method="post" onSubmit={() => setTimeout(onClose, 100)}>
           <input type="hidden" name="intent" value={isEdit ? "edit-metric" : "add-metric"} />
           {isEdit && <input type="hidden" name="metricId" value={metric.id} />}
@@ -48,7 +56,7 @@ export function MetricForm({ open, onClose, metric }: MetricFormProps) {
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-text mb-1">Name</label>
               <input id="name" name="name" type="text" required defaultValue={metric?.name}
-                placeholder="e.g. Water intake"
+                placeholder="e.g. Gym session"
                 className="w-full px-3 py-3 rounded-lg bg-surface-container-high text-text placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary" />
             </div>
             <div>
@@ -176,16 +184,10 @@ export function MetricForm({ open, onClose, metric }: MetricFormProps) {
                 )}
               </div>
             )}
-            <div className="flex gap-3 pt-2">
-              <button type="button" onClick={onClose}
-                className="flex-1 py-3 rounded-full bg-surface-container-high text-text font-medium min-h-[44px]">
-                Cancel
-              </button>
-              <button type="submit" disabled={isSubmitting}
-                className="flex-1 py-3 bg-primary text-white font-medium rounded-full hover:bg-primary-container transition-colors disabled:opacity-50 min-h-[44px]">
-                {isSubmitting ? "..." : isEdit ? "Save" : "Add"}
-              </button>
-            </div>
+            <button type="submit" disabled={isSubmitting}
+              className="w-full py-3.5 bg-primary text-white font-semibold text-base rounded-[14px] hover:bg-primary-hover transition-colors disabled:opacity-50 min-h-[44px] mt-1">
+              {isSubmitting ? "..." : isEdit ? "Save" : "Save metric"}
+            </button>
           </div>
         </Form>
       </div>
