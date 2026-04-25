@@ -123,7 +123,7 @@ export default function LoginPage() {
             <p className="text-danger text-sm">{actionData.error}</p>
           )}
           <button type="submit" disabled={isSubmitting}
-            className="w-full py-3 bg-primary text-white font-medium rounded-full hover:bg-primary-container transition-colors disabled:opacity-50 min-h-[44px]">
+            className="w-full py-3.5 bg-primary text-white font-semibold text-base rounded-[14px] hover:bg-primary-hover transition-colors disabled:opacity-50 min-h-[44px]">
             {isSubmitting ? "..." : mode === "login" ? "Log In" : "Sign Up"}
           </button>
         </div>

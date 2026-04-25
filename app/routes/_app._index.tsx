@@ -5,9 +5,10 @@ import { requireAuth } from "~/lib/auth.server";
 import { getDb } from "~/lib/db.server";
 import { metrics, metricEntries } from "~/db/schema";
 import { eq, and, asc, gte, lte } from "drizzle-orm";
-import { GOAL_DIRECTIONS } from "~/lib/types";
+import { GOAL_DIRECTIONS, isGoalMet } from "~/lib/types";
 import { MetricForm } from "~/components/metric-form";
 import { MetricRow } from "~/components/metric-row";
+import { ValueEditor } from "~/components/value-editor";
 import { DateNav } from "~/components/date-nav";
 import { today, getWeekDays } from "~/lib/date";
 import {
@@ -182,6 +183,8 @@ export async function action({ request, context }: Route.ActionArgs) {
     const value = parseFloat(formData.get("value") as string);
     const date = formData.get("date") as string;
 
+    if (value < 0) return { error: "Value cannot be negative." };
+
     const existing = await db
       .select()
       .from(metricEntries)
@@ -210,7 +213,34 @@ export async function action({ request, context }: Route.ActionArgs) {
   return { error: "Unknown intent." };
 }
 
-function SortableMetricRow({ metric, entry, date, weeklyDone }: { metric: any; entry: any; date: string; weeklyDone: number }) {
+function ProgressBar({ metrics }: { metrics: any[] }) {
+  const doneCount = metrics.filter((m) => {
+    if (m.weeklyTarget != null) {
+      return (m.weeklyDone ?? 0) >= m.weeklyTarget;
+    }
+    if (m.type === "boolean") return m.entry?.value === 1;
+    return m.entry?.value != null && isGoalMet(m.entry.value, m.goal, m.goalDirection);
+  }).length;
+  const total = metrics.length;
+  const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+
+  return (
+    <div className="mb-1">
+      <div className="flex justify-between items-center mb-1.5">
+        <span className="text-xs text-outline font-mono">{doneCount} / {total} done</span>
+        <span className={`text-xs font-semibold font-mono ${pct === 100 ? "text-success" : "text-text-muted"}`}>{pct}%</span>
+      </div>
+      <div className="h-1 bg-outline-variant rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-300 ${pct === 100 ? "bg-success" : "bg-primary"}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function SortableMetricRow({ metric, entry, date, weeklyDone, onValueTap }: { metric: any; entry: any; date: string; weeklyDone: number; onValueTap?: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: metric.id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -232,7 +262,7 @@ function SortableMetricRow({ metric, entry, date, weeklyDone }: { metric: any; e
         </svg>
       </button>
       <div className="flex-1">
-        <MetricRow metric={metric} entry={entry} date={date} weeklyDone={weeklyDone} />
+        <MetricRow metric={metric} entry={entry} date={date} weeklyDone={weeklyDone} onValueTap={onValueTap} />
       </div>
     </div>
   );
@@ -241,6 +271,7 @@ function SortableMetricRow({ metric, entry, date, weeklyDone }: { metric: any; e
 export default function TodayView() {
   const { date, metrics: metricsList } = useLoaderData<typeof loader>();
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingMetric, setEditingMetric] = useState<typeof metricsList[0] | null>(null);
   const [orderedMetrics, setOrderedMetrics] = useState(metricsList);
   const fetcher = useFetcher();
 
@@ -284,21 +315,13 @@ export default function TodayView() {
         </div>
       ) : (
         <div className="px-4 pt-2">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-heading font-semibold text-lg text-text">Core Metrics</h2>
-            <span className="text-sm text-text-muted">
-              {orderedMetrics.filter(m =>
-                m.weeklyTarget != null ||
-                (m.goal != null && m.goalDirection != null) ||
-                m.type === 'boolean'
-              ).length} active goals
-            </span>
-          </div>
+          <ProgressBar metrics={orderedMetrics} />
+          <div className="mb-3" />
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={orderedMetrics.map((m) => m.id)} strategy={verticalListSortingStrategy}>
               <div className="flex flex-col gap-3">
                 {orderedMetrics.map((m) => (
-                  <SortableMetricRow key={m.id} metric={m} entry={m.entry} date={date} weeklyDone={m.weeklyDone} />
+                  <SortableMetricRow key={m.id} metric={m} entry={m.entry} date={date} weeklyDone={m.weeklyDone} onValueTap={m.type !== "boolean" ? () => setEditingMetric(m) : undefined} />
                 ))}
               </div>
             </SortableContext>
@@ -306,16 +329,28 @@ export default function TodayView() {
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-bg">
+      <div className="fixed bottom-0 left-0 right-0 p-4" style={{ background: 'linear-gradient(to top, var(--color-bg) 70%, transparent)' }}>
         <button
           onClick={() => setShowAddForm(true)}
-          className="w-full py-3 bg-primary text-white font-medium rounded-full hover:bg-primary-container transition-colors min-h-[44px] max-w-lg mx-auto block"
+          className="w-full py-3.5 bg-primary text-white font-semibold text-base rounded-[14px] hover:bg-primary-hover transition-colors min-h-[44px] max-w-lg mx-auto flex items-center justify-center gap-2"
         >
-          Add Metric
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          Add metric
         </button>
       </div>
 
       <MetricForm open={showAddForm} onClose={() => setShowAddForm(false)} />
+
+      {editingMetric && editingMetric.type !== "boolean" && (
+        <ValueEditor
+          metric={editingMetric}
+          currentValue={editingMetric.entry?.value ?? null}
+          date={date}
+          onClose={() => setEditingMetric(null)}
+        />
+      )}
     </div>
   );
 }

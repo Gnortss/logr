@@ -14,7 +14,29 @@
       "Bash(npx drizzle-kit:*)",
       "Bash(npx wrangler:*)",
       "Bash(npx vitest:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "mcp__stitch__list_projects",
+      "mcp__stitch__list_screens",
+      "mcp__stitch__list_design_systems",
+      "mcp__stitch__get_screen",
+      "WebFetch(domain:contribution.usercontent.google.com)",
+      "WebFetch(domain:lh3.googleusercontent.com)",
+      "Bash(npx tsc:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5174/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5174/login)",
+      "Bash(timeout 10 bash -c 'while ! curl -s -o /dev/null -w \"\"%{http_code}\"\" http://localhost:3000 2>/dev/null | grep -q \"\"200\\\\|302\"\"; do sleep 1; done; echo \"\"Server is up\"\"')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5175)",
+      "Bash(npm uninstall:*)",
+      "Bash(grep -r \"JWT_SECRET\\\\|GOOGLE\\\\|OAUTH\\\\|REDIRECT\" /d/dev/logr --include=*.ts --include=*.tsx --include=*.js --include=*.json --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=build --exclude-dir=.react-router)",
+      "Bash(grep -r \"localhost\\\\|http://\\\\|https://\\\\|callback\\\\|redirect\" /d/dev/logr --include=*.toml --include=*.ts --include=*.tsx --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=build)",
+      "Bash(find /d/dev/logr -type f \\\\\\(-name *.example -o -name README* -o -name SETUP* -o -name config* \\\\\\) ! -path */node_modules/*)",
+      "Bash(xargs grep:*)",
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(grep '_app.metrics.$id')",
+      "Bash(npx react-router *)",
+      "Bash(gunzip -c webfetch-1777137331141-47dpdg.bin)",
+      "Bash(tar tf *)"
     ]
   }
 }
