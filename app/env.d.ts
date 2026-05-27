@@ -3,10 +3,6 @@ interface Env {
   JWT_SECRET: string;
 }
 
-declare module "*.ttf?arraybuffer" {
-  const buf: ArrayBuffer;
-  export default buf;
-}
 declare module "*.wasm" {
   const wasm: WebAssembly.Module;
   export default wasm;

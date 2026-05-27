@@ -13,12 +13,10 @@ const fixture: DashboardData = {
 };
 
 describe("renderDashboardPng", () => {
-  // TODO: fixture for vitest fetch local file
-  // Skipped: vitest cannot resolve ?arraybuffer or fetch a bare /node_modules path for
-  // the resvg wasm binary. Both import strategies fail at vitest runtime (unknown file
-  // extension for ?arraybuffer; Invalid URL for ?url+fetch). The implementation is
-  // correct and will work on the actual Cloudflare Worker runtime where Vite transforms
-  // the ?arraybuffer / ?url imports properly.
+  // Skipped: vitest/Node cannot fetch the wasm ?url asset at runtime because there is
+  // no dev server running during tests. The wasm stub plugin returns "" for ?url imports,
+  // so fetch("http://localhost/...") would fail. The implementation is verified manually
+  // via the dev server (`curl localhost:517X/dashboard.png`).
   it.skip("returns a buffer starting with PNG magic bytes", async () => {
     const buf = await renderDashboardPng(fixture);
     expect(buf.length).toBeGreaterThan(100);

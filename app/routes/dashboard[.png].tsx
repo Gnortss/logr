@@ -2,7 +2,7 @@ import type { Route } from "./+types/dashboard[.png]";
 import { getDb } from "~/lib/db.server";
 import { requireApiKeyFromRequest, checkRateLimit } from "~/lib/api-key.server";
 import { getDashboardData } from "~/lib/dashboard.server";
-import { renderDashboardPng, renderErrorPng } from "~/lib/dashboard-png.server";
+import { renderDashboardPng, renderErrorPng, setRequestContext } from "~/lib/dashboard-png.server";
 import { todayInTz } from "~/lib/tz";
 
 async function errorPngResponse(status: number, message: string): Promise<Response> {
@@ -17,6 +17,7 @@ async function errorPngResponse(status: number, message: string): Promise<Respon
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
+  setRequestContext(request);
   const db = getDb(context.cloudflare.env.DB);
   const url = new URL(request.url);
 

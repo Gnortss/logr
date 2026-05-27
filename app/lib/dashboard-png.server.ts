@@ -1,18 +1,49 @@
 import { Resvg, initWasm } from "@resvg/resvg-wasm";
-import resvgWasm from "@resvg/resvg-wasm/index_bg.wasm?arraybuffer";
-import interRegular from "../../public/fonts/Inter-Regular.ttf?arraybuffer";
-import interBold from "../../public/fonts/Inter-Bold.ttf?arraybuffer";
-import jbMonoBold from "../../public/fonts/JetBrainsMono-Bold.ttf?arraybuffer";
+import resvgWasmUrl from "@resvg/resvg-wasm/index_bg.wasm?url";
 import { renderDashboardSvg } from "~/lib/dashboard-svg";
 import type { DashboardData } from "~/lib/dashboard";
 
+// Fonts live in public/fonts/ and are served at /fonts/<name> in both dev and prod.
+const FONT_URLS = [
+  "/fonts/Inter-Regular.ttf",
+  "/fonts/Inter-Bold.ttf",
+  "/fonts/JetBrainsMono-Bold.ttf",
+];
+
+// Stored once per Worker lifetime so renderDashboardPng / renderErrorPng
+// do not need to carry a `request` parameter in their public signatures.
+let _baseUrl: string | undefined;
+
+/**
+ * Must be called from the route loader (which has access to `request`) before
+ * the first call to renderDashboardPng or renderErrorPng.  Subsequent calls
+ * after the wasm is already initialised are no-ops.
+ */
+export function setRequestContext(request: Request): void {
+  if (!_baseUrl) _baseUrl = request.url;
+}
+
 let initialized = false;
 async function ensureInit(): Promise<void> {
-  if (!initialized) {
-    await initWasm(resvgWasm as ArrayBuffer);
-    initialized = true;
+  if (initialized) return;
+  const base = _baseUrl ?? "http://localhost/";
+  const origin = new URL(base).origin;
+  const [wasmBuf, ...fontBufs] = await Promise.all([
+    fetch(new URL(resvgWasmUrl, base)).then((r) => r.arrayBuffer()),
+    ...FONT_URLS.map((p) => fetch(new URL(p, origin)).then((r) => r.arrayBuffer())),
+  ]);
+  try {
+    await initWasm(wasmBuf);
+  } catch (e) {
+    // resvg-wasm throws "Already initialized" if the underlying wasm module was not
+    // re-evaluated (e.g. during Vite HMR when only this module reloads). Safe to ignore.
+    if (!(e instanceof Error && e.message.includes("Already initialized"))) throw e;
   }
+  _fontBuffers = fontBufs.map((buf) => new Uint8Array(buf));
+  initialized = true;
 }
+
+let _fontBuffers: Uint8Array[] = [];
 
 export async function renderDashboardPng(data: DashboardData): Promise<Uint8Array> {
   await ensureInit();
@@ -20,11 +51,7 @@ export async function renderDashboardPng(data: DashboardData): Promise<Uint8Arra
   const resvg = new Resvg(svg, {
     fitTo: { mode: "width", value: 400 },
     font: {
-      fontBuffers: [
-        new Uint8Array(interRegular as ArrayBuffer),
-        new Uint8Array(interBold as ArrayBuffer),
-        new Uint8Array(jbMonoBold as ArrayBuffer),
-      ],
+      fontBuffers: _fontBuffers,
       loadSystemFonts: false,
       defaultFontFamily: "Inter",
     },
@@ -43,11 +70,7 @@ export async function renderErrorPng(message: string): Promise<Uint8Array> {
   const resvg = new Resvg(svg, {
     fitTo: { mode: "width", value: 400 },
     font: {
-      fontBuffers: [
-        new Uint8Array(interRegular as ArrayBuffer),
-        new Uint8Array(interBold as ArrayBuffer),
-        new Uint8Array(jbMonoBold as ArrayBuffer),
-      ],
+      fontBuffers: _fontBuffers,
       loadSystemFonts: false,
       defaultFontFamily: "Inter",
     },
