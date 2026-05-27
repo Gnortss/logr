@@ -81,10 +81,10 @@ export function computeMetricView(
   const weeklyDone =
     weeklyTargetEffective > 0
       ? Math.min(successCount, weeklyTargetEffective)
-      : successCount;
+      : 0;
 
   const todayIndex = weekDays.indexOf(todayDate);
-  const daysElapsed = todayIndex < 0 ? 7 : todayIndex + 1;
+  const daysElapsed = todayIndex < 0 ? weekDays.length : todayIndex + 1;
   const status = classifyStatus(weeklyDone, weeklyTargetEffective, daysElapsed);
 
   let displayKind: DisplayKind;

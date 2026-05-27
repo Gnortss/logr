@@ -149,4 +149,19 @@ describe("computeMetricView", () => {
     expect(view.weeklyDone).toBe(3); // capped at target
     expect(view.status).toBe("met");
   });
+
+  it("tracking metric: weeklyDone is 0 even when entries exist", () => {
+    const m = {
+      id: 5, name: "Notes", type: "count", unit: "notes", goal: null,
+      goalDirection: null, weeklyTarget: null,
+    } as any;
+    const entries = [
+      { date: "2026-05-25", value: 3 },
+      { date: "2026-05-27", value: 5 },
+    ];
+    const view = computeMetricView(m, entries, weekDays, todayDate);
+    expect(view.weeklyTargetEffective).toBe(0);
+    expect(view.weeklyDone).toBe(0); // no target → meaningless to report
+    expect(view.status).toBe("tracking");
+  });
 });
