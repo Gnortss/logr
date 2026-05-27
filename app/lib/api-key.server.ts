@@ -88,35 +88,6 @@ export async function requireApiKey(
   return result;
 }
 
-export function extractApiKeyFromRequest(request: Request): string | null {
-  const authHeader = request.headers.get("Authorization") ?? "";
-  const match = authHeader.match(/^Bearer\s+(.+)$/);
-  if (match) return match[1];
-
-  const url = new URL(request.url);
-  const q = url.searchParams.get("key");
-  if (q) return q;
-
-  return null;
-}
-
-export async function requireApiKeyFromRequest(
-  request: Request,
-  db: Database
-): Promise<{ userId: number; keyId: number }> {
-  const key = extractApiKeyFromRequest(request);
-
-  if (!key) {
-    throw unauthorizedResponse("Missing API key");
-  }
-
-  const result = await validateApiKey(db, key);
-  if (!result) {
-    throw unauthorizedResponse("Invalid API key");
-  }
-  return result;
-}
-
 const rateLimitMap = new Map<number, { count: number; resetAt: number }>();
 
 export function checkRateLimit(keyId: number): void {
