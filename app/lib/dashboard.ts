@@ -126,3 +126,41 @@ export function computeMetricView(
     todayValue,
   };
 }
+
+export type DayState = "full" | "partial" | "empty" | "future";
+
+export interface Hero {
+  done: number;
+  total: number;
+  onTrackCount: number;
+  totalGoals: number;
+  dayStates: DayState[];
+}
+
+export function computeHero(
+  metrics: DashboardMetric[],
+  weekDays: string[],
+  todayDate: string
+): Hero {
+  const counted = metrics.filter((m) => m.weeklyTargetEffective > 0);
+  const done = counted.reduce((s, m) => s + m.weeklyDone, 0);
+  const total = counted.reduce((s, m) => s + m.weeklyTargetEffective, 0);
+  const onTrackCount = counted.filter(
+    (m) => m.status === "met" || m.status === "on_track"
+  ).length;
+  const totalGoals = counted.length;
+
+  const todayIndex = weekDays.indexOf(todayDate);
+  const todayIdx = todayIndex < 0 ? weekDays.length - 1 : todayIndex;
+
+  const dayStates: DayState[] = weekDays.map((_, i) => {
+    if (i > todayIdx) return "future";
+    if (metrics.length === 0) return "empty";
+    const successesOnDay = metrics.filter((m) => m.daySuccess[i]).length;
+    if (successesOnDay === 0) return "empty";
+    if (successesOnDay === metrics.length) return "full";
+    return "partial";
+  });
+
+  return { done, total, onTrackCount, totalGoals, dayStates };
+}

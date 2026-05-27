@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeDaySuccess, computeWeeklyTargetEffective, classifyStatus, type Status, computeMetricView, type DashboardMetric, type DisplayKind } from "~/lib/dashboard";
+import { computeDaySuccess, computeWeeklyTargetEffective, classifyStatus, type Status, computeMetricView, type DashboardMetric, type DisplayKind, computeHero, type Hero, type DayState } from "~/lib/dashboard";
 
 describe("computeDaySuccess", () => {
   const weekDays = [
@@ -163,5 +163,61 @@ describe("computeMetricView", () => {
     expect(view.weeklyTargetEffective).toBe(0);
     expect(view.weeklyDone).toBe(0); // no target → meaningless to report
     expect(view.status).toBe("tracking");
+  });
+});
+
+describe("computeHero", () => {
+  const weekDays = [
+    "2026-05-25", "2026-05-26", "2026-05-27",
+    "2026-05-28", "2026-05-29", "2026-05-30", "2026-05-31",
+  ];
+  const todayDate = "2026-05-27"; // index 2
+
+  function mkMetric(overrides: Partial<DashboardMetric>): DashboardMetric {
+    return {
+      id: 0, name: "m", type: "boolean", unit: null, goal: null,
+      goalDirection: null, weeklyTarget: null,
+      weeklyTargetEffective: 7, weeklyDone: 0,
+      dayValues: [null, null, null, null, null, null, null],
+      daySuccess: [false, false, false, false, false, false, false],
+      status: "behind", displayKind: "streak", streak: 0, todayValue: null,
+      ...overrides,
+    };
+  }
+
+  it("sums done and target across counted metrics, ignores tracking", () => {
+    const metrics: DashboardMetric[] = [
+      mkMetric({ id: 1, weeklyTargetEffective: 4, weeklyDone: 3, status: "on_track", daySuccess: [true, true, true, false, false, false, false] }),
+      mkMetric({ id: 2, weeklyTargetEffective: 7, weeklyDone: 3, status: "behind", daySuccess: [true, true, true, false, false, false, false] }),
+      mkMetric({ id: 3, weeklyTargetEffective: 0, weeklyDone: 0, status: "tracking", daySuccess: [false, false, false, false, false, false, false] }),
+    ];
+    const hero = computeHero(metrics, weekDays, todayDate);
+    expect(hero.done).toBe(6);
+    expect(hero.total).toBe(11);
+    expect(hero.totalGoals).toBe(2);
+    expect(hero.onTrackCount).toBe(1);
+  });
+
+  it("dayStates: full if all metrics succeed; partial if some; empty if none; future for >todayIndex", () => {
+    const metrics: DashboardMetric[] = [
+      mkMetric({ id: 1, daySuccess: [true, true, false, false, false, false, false] }),
+      mkMetric({ id: 2, daySuccess: [true, false, false, false, false, false, false] }),
+    ];
+    const hero = computeHero(metrics, weekDays, todayDate);
+    expect(hero.dayStates).toEqual<DayState[]>([
+      "full",    // Mon: both true
+      "partial", // Tue: 1 of 2
+      "empty",   // Wed: 0 of 2 (still today)
+      "future", "future", "future", "future",
+    ]);
+  });
+
+  it("handles empty metric list", () => {
+    const hero = computeHero([], weekDays, todayDate);
+    expect(hero.done).toBe(0);
+    expect(hero.total).toBe(0);
+    expect(hero.totalGoals).toBe(0);
+    expect(hero.onTrackCount).toBe(0);
+    expect(hero.dayStates).toEqual<DayState[]>(["empty", "empty", "empty", "future", "future", "future", "future"]);
   });
 });
