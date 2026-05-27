@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeDaySuccess, computeWeeklyTargetEffective, classifyStatus, type Status } from "~/lib/dashboard";
+import { computeDaySuccess, computeWeeklyTargetEffective, classifyStatus, type Status, computeMetricView, type DashboardMetric, type DisplayKind } from "~/lib/dashboard";
 
 describe("computeDaySuccess", () => {
   const weekDays = [
@@ -84,5 +84,69 @@ describe("classifyStatus", () => {
   it("returns 'behind' when done < expected", () => {
     // target=5, daysElapsed=3 → expected = ceil(5*3/7) = 3
     expect(classifyStatus(2, 5, 3)).toBe<Status>("behind");
+  });
+});
+
+describe("computeMetricView", () => {
+  const weekDays = [
+    "2026-05-25", "2026-05-26", "2026-05-27",
+    "2026-05-28", "2026-05-29", "2026-05-30", "2026-05-31",
+  ];
+  const todayDate = "2026-05-27"; // Wed → todayIndex=2 → daysElapsed=3
+
+  it("weekly-target boolean: met case", () => {
+    const m = {
+      id: 1, name: "Workout", type: "boolean", unit: null, goal: null,
+      goalDirection: null, weeklyTarget: 4,
+    } as any;
+    const entries = [
+      { date: "2026-05-25", value: 1 },
+      { date: "2026-05-26", value: 1 },
+      { date: "2026-05-27", value: 1 },
+      { date: "2026-05-24", value: 1 }, // outside the current week
+    ];
+    const view = computeMetricView(m, entries, weekDays, todayDate);
+    expect(view.weeklyTargetEffective).toBe(4);
+    expect(view.weeklyDone).toBe(3);
+    expect(view.status).toBe("on_track");
+    expect(view.displayKind).toBe<DisplayKind>("weekly_ratio");
+  });
+
+  it("daily boolean (no weeklyTarget): shows streak", () => {
+    const m = {
+      id: 2, name: "Read", type: "boolean", unit: null, goal: null,
+      goalDirection: null, weeklyTarget: null,
+    } as any;
+    const entries = [
+      { date: "2026-05-25", value: 1 },
+      { date: "2026-05-26", value: 1 },
+      { date: "2026-05-27", value: 1 },
+    ];
+    const view = computeMetricView(m, entries, weekDays, todayDate);
+    expect(view.displayKind).toBe<DisplayKind>("streak");
+    expect(view.streak).toBe(3);
+  });
+
+  it("numeric no goal: today_value", () => {
+    const m = {
+      id: 3, name: "Notes", type: "count", unit: "notes", goal: null,
+      goalDirection: null, weeklyTarget: null,
+    } as any;
+    const entries = [{ date: "2026-05-27", value: 5 }];
+    const view = computeMetricView(m, entries, weekDays, todayDate);
+    expect(view.displayKind).toBe<DisplayKind>("today_value");
+    expect(view.todayValue).toBe(5);
+    expect(view.status).toBe("tracking");
+  });
+
+  it("caps weeklyDone at target", () => {
+    const m = {
+      id: 4, name: "Walk", type: "boolean", unit: null, goal: null,
+      goalDirection: null, weeklyTarget: 3,
+    } as any;
+    const entries = weekDays.map((d) => ({ date: d, value: 1 })); // 7 done
+    const view = computeMetricView(m, entries, weekDays, todayDate);
+    expect(view.weeklyDone).toBe(3); // capped at target
+    expect(view.status).toBe("met");
   });
 });
