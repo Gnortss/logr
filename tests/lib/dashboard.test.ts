@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeDaySuccess, computeWeeklyTargetEffective, classifyStatus, type Status, computeMetricView, type DashboardMetric, type DisplayKind, computeHero, type Hero, type DayState } from "~/lib/dashboard";
+import { computeDaySuccess, computeWeeklyTargetEffective, classifyStatus, type Status, computeMetricView, type DashboardMetric, type DisplayKind, computeHero, type Hero, type DayState, buildDashboardData, type DashboardData, type DashboardEntry } from "~/lib/dashboard";
 
 describe("computeDaySuccess", () => {
   const weekDays = [
@@ -219,5 +219,40 @@ describe("computeHero", () => {
     expect(hero.totalGoals).toBe(0);
     expect(hero.onTrackCount).toBe(0);
     expect(hero.dayStates).toEqual<DayState[]>(["empty", "empty", "empty", "future", "future", "future", "future"]);
+  });
+});
+
+describe("buildDashboardData", () => {
+  it("assembles all pieces given metrics + per-metric entries", () => {
+    const todayDate = "2026-05-27"; // Wed of ISO week 22, 2026
+    const metrics = [
+      { id: 1, name: "Workout", type: "boolean" as const, unit: null, goal: null, goalDirection: null, weeklyTarget: 4 },
+      { id: 2, name: "Read", type: "boolean" as const, unit: null, goal: null, goalDirection: null, weeklyTarget: null },
+    ];
+    const entriesByMetric = new Map<number, DashboardEntry[]>([
+      [1, [
+        { date: "2026-05-25", value: 1 },
+        { date: "2026-05-26", value: 1 },
+        { date: "2026-05-27", value: 1 },
+      ]],
+      [2, [
+        { date: "2026-05-25", value: 1 },
+        { date: "2026-05-26", value: 1 },
+        { date: "2026-05-27", value: 1 },
+      ]],
+    ]);
+
+    const data = buildDashboardData(metrics, entriesByMetric, todayDate);
+    expect(data.date).toBe(todayDate);
+    expect(data.weekDays).toHaveLength(7);
+    expect(data.weekDays[0]).toBe("2026-05-25"); // Monday
+    expect(data.todayIndex).toBe(2);
+    expect(data.metrics).toHaveLength(2);
+    expect(data.metrics[0].name).toBe("Workout");
+    expect(data.metrics[0].status).toBe("on_track"); // 3/4 with daysElapsed=3, expected=2
+    expect(data.metrics[1].displayKind).toBe("streak");
+    expect(data.hero.done).toBe(3 + 3); // workout 3 + read 3
+    expect(data.hero.total).toBe(4 + 7);
+    expect(data.weekNumber).toBe(22);
   });
 });

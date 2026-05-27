@@ -1,5 +1,6 @@
 import { isGoalMet, type GoalDirection, type MetricType } from "~/lib/types";
 import { computeCurrentStreak } from "~/lib/streak";
+import { getWeekDays } from "~/lib/date";
 
 export interface DashboardEntry {
   date: string;
@@ -163,4 +164,44 @@ export function computeHero(
   });
 
   return { done, total, onTrackCount, totalGoals, dayStates };
+}
+
+export interface DashboardData {
+  date: string;
+  weekDays: string[];
+  todayIndex: number;
+  weekNumber: number;
+  hero: Hero;
+  metrics: DashboardMetric[];
+}
+
+function isoWeekNumber(dateStr: string): number {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  // ISO 8601: Thursday of the week determines the year.
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+}
+
+export function buildDashboardData(
+  metrics: DashboardMetricInput[],
+  entriesByMetric: Map<number, DashboardEntry[]>,
+  todayDate: string
+): DashboardData {
+  const weekDays = getWeekDays(todayDate);
+  const todayIndex = weekDays.indexOf(todayDate);
+  const computedMetrics = metrics.map((m) =>
+    computeMetricView(m, entriesByMetric.get(m.id) ?? [], weekDays, todayDate)
+  );
+  const hero = computeHero(computedMetrics, weekDays, todayDate);
+  return {
+    date: todayDate,
+    weekDays,
+    todayIndex,
+    weekNumber: isoWeekNumber(todayDate),
+    hero,
+    metrics: computedMetrics,
+  };
 }
