@@ -31,3 +31,23 @@ export function computeDaySuccess(
     return v > 0;
   });
 }
+
+export type Status = "met" | "on_track" | "behind" | "tracking";
+
+export function computeWeeklyTargetEffective(m: DashboardMetricInput): number {
+  if (m.weeklyTarget != null) return m.weeklyTarget;
+  if (m.type === "boolean") return 7;
+  if (m.goal != null && m.goalDirection != null) return 7;
+  return 0;
+}
+
+export function classifyStatus(
+  done: number,
+  target: number,
+  daysElapsed: number
+): Status {
+  if (target === 0) return "tracking";
+  if (done >= target) return "met";
+  const expected = Math.ceil((target * daysElapsed) / 7);
+  return done >= expected ? "on_track" : "behind";
+}
