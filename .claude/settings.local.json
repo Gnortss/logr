@@ -36,7 +36,11 @@
       "Bash(grep '_app.metrics.$id')",
       "Bash(npx react-router *)",
       "Bash(gunzip -c webfetch-1777137331141-47dpdg.bin)",
-      "Bash(tar tf *)"
+      "Bash(tar tf *)",
+      "Bash(C:/Users/Jure/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/start-server.sh *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(mkdir -p public/fonts)",
+      "Bash(ls public/fonts/)"
     ]
   }
 }
