@@ -1,4 +1,5 @@
 import { isGoalMet, type GoalDirection } from "~/lib/types";
+import { computeCurrentStreak } from "~/lib/streak";
 
 interface Entry {
   date: string;
@@ -47,15 +48,7 @@ export function computeBooleanStats(entries: Entry[], from: string, to: string):
     }
   }
 
-  let currentStreak = 0;
-  for (let i = 0; i < totalDays; i++) {
-    const day = addDaysUTC(to, -i);
-    if (doneSet.has(day)) {
-      currentStreak++;
-    } else {
-      break;
-    }
-  }
+  const currentStreak = computeCurrentStreak(entries, to, (v) => v === 1);
 
   return {
     currentStreak,
