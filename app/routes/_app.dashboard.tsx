@@ -35,6 +35,7 @@ export default function DashboardPage() {
     <div className="px-4 py-6 max-w-md mx-auto">
       <h1 className="text-xl font-heading font-semibold mb-3">Dashboard</h1>
       <div className="bg-bg-card border border-outline-variant rounded-xl p-2 inline-block">
+        {/* svg is built server-side via renderDashboardSvg, which escapes all user data via esc(); safe to inject. */}
         <div
           style={{ width: 400, height: 300 }}
           dangerouslySetInnerHTML={{ __html: svg }}

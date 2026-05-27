@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { computeDaySuccess, computeWeeklyTargetEffective, classifyStatus, type Status, computeMetricView, type DashboardMetric, type DisplayKind, computeHero, type Hero, type DayState, buildDashboardData, type DashboardData, type DashboardEntry } from "~/lib/dashboard";
+import { todayInTz } from "~/lib/tz";
 
 describe("computeDaySuccess", () => {
   const weekDays = [
@@ -254,5 +255,25 @@ describe("buildDashboardData", () => {
     expect(data.hero.done).toBe(3 + 3); // workout 3 + read 3
     expect(data.hero.total).toBe(4 + 7);
     expect(data.weekNumber).toBe(22);
+  });
+});
+
+describe("buildDashboardData + tz integration", () => {
+  it("a tz shift across midnight produces a different week", () => {
+    // Same UTC instant: 2026-05-31 23:30 UTC (Sunday end-of-day).
+    // UTC reads it as 2026-05-31 (still in ISO week 22).
+    // Pacific/Auckland (+12 = NZST) sees 2026-06-01 11:30 (next day, ISO week 23).
+    const instant = new Date("2026-05-31T23:30:00Z");
+    const utcDate = todayInTz("UTC", instant);
+    const aklDate = todayInTz("Pacific/Auckland", instant);
+    expect(utcDate).toBe("2026-05-31");
+    expect(aklDate).toBe("2026-06-01");
+
+    const dUtc = buildDashboardData([], new Map(), utcDate);
+    const dAkl = buildDashboardData([], new Map(), aklDate);
+    expect(dUtc.weekDays[0]).toBe("2026-05-25"); // Mon of ISO 22
+    expect(dAkl.weekDays[0]).toBe("2026-06-01"); // Mon of ISO 23
+    expect(dUtc.weekNumber).toBe(22);
+    expect(dAkl.weekNumber).toBe(23);
   });
 });
