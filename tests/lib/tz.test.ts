@@ -3,9 +3,10 @@ import { todayInTz } from "~/lib/tz";
 
 describe("todayInTz", () => {
   it("returns YYYY-MM-DD in UTC when no tz given", () => {
-    const result = todayInTz(undefined);
+    const fixed = new Date("2026-05-26T12:00:00Z");
+    const result = todayInTz(undefined, fixed);
     expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(result).toBe(new Date().toISOString().slice(0, 10));
+    expect(result).toBe("2026-05-26");
   });
 
   it("returns YYYY-MM-DD in given IANA tz", () => {
@@ -15,8 +16,9 @@ describe("todayInTz", () => {
   });
 
   it("falls back to UTC when tz is invalid", () => {
-    const result = todayInTz("not/a/zone");
-    expect(result).toBe(new Date().toISOString().slice(0, 10));
+    const fixed = new Date("2026-05-26T12:00:00Z");
+    const result = todayInTz("not/a/zone", fixed);
+    expect(result).toBe("2026-05-26");
   });
 
   it("handles tz that shifts the date", () => {
@@ -25,5 +27,11 @@ describe("todayInTz", () => {
     const fixed = new Date("2026-05-26T23:30:00Z");
     const result = todayInTz("Pacific/Auckland", fixed);
     expect(result).toBe("2026-05-27");
+  });
+
+  it("falls back to UTC when tz is empty string", () => {
+    const fixed = new Date("2026-05-26T12:00:00Z");
+    const result = todayInTz("", fixed);
+    expect(result).toBe("2026-05-26");
   });
 });
