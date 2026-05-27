@@ -62,4 +62,14 @@ describe("renderDashboardSvg", () => {
     const svg = renderDashboardSvg(fixture, { mode: "bw" });
     expect(svg).toMatchSnapshot();
   });
+
+  it("renders a 'no habits yet' placeholder when metrics is empty", () => {
+    const empty: DashboardData = {
+      ...fixture,
+      metrics: [],
+      hero: { ...fixture.hero, totalGoals: 0, done: 0, total: 0 },
+    };
+    const svg = renderDashboardSvg(empty, { mode: "color" });
+    expect(svg).toContain("No habits yet");
+  });
 });

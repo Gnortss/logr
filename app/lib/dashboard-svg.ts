@@ -167,21 +167,28 @@ export function renderDashboardSvg(data: DashboardData, opts: RenderOpts): strin
   const rowX = 12;
   const rowW = w - 24;
   let rows = "";
-  for (let i = 0; i < data.metrics.length; i++) {
-    const m = data.metrics[i];
-    const ry = rowsStartY + i * (rowH + rowGap);
-    const target = m.weeklyTarget != null ? ` · ${m.weeklyTarget}× / wk`
-      : m.type === "boolean" ? " · daily"
-      : m.goal != null ? ` · ${m.goal}${m.unit ? ` ${m.unit}` : ""}`
-      : m.unit ? ` · ${m.unit}` : "";
-    const nameText = `<text x="${rowX + 9}" y="${ry + 18}" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="${c.text}">${esc(m.name)}<tspan fill="${c.textMuted}" font-weight="500">${esc(target)}</tspan></text>`;
-    const dotsX = rowX + rowW - 44 - 88;
-    const dots = weekDots(dotsX, ry + 10, m, opts.mode);
-    const stat = statBlock(rowX + rowW - 8, ry + 3, m, opts.mode);
+  if (data.metrics.length === 0) {
     rows += `
+    <rect x="${rowX}" y="${rowsStartY}" width="${rowW}" height="${rowH * 3}" rx="7" fill="${c.card}" stroke="${c.outline}" stroke-width="1"/>
+    <text x="${rowX + rowW / 2}" y="${rowsStartY + 40}" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="${c.textMuted}" text-anchor="middle">No habits yet — add one in the app</text>
+  `;
+  } else {
+    for (let i = 0; i < data.metrics.length; i++) {
+      const m = data.metrics[i];
+      const ry = rowsStartY + i * (rowH + rowGap);
+      const target = m.weeklyTarget != null ? ` · ${m.weeklyTarget}× / wk`
+        : m.type === "boolean" ? " · daily"
+        : m.goal != null ? ` · ${m.goal}${m.unit ? ` ${m.unit}` : ""}`
+        : m.unit ? ` · ${m.unit}` : "";
+      const nameText = `<text x="${rowX + 9}" y="${ry + 18}" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="${c.text}">${esc(m.name)}<tspan fill="${c.textMuted}" font-weight="500">${esc(target)}</tspan></text>`;
+      const dotsX = rowX + rowW - 44 - 88;
+      const dots = weekDots(dotsX, ry + 10, m, opts.mode);
+      const stat = statBlock(rowX + rowW - 8, ry + 3, m, opts.mode);
+      rows += `
       <rect x="${rowX}" y="${ry}" width="${rowW}" height="${rowH}" rx="7" fill="${c.card}" stroke="${c.outline}" stroke-width="1"/>
       ${nameText}${dots}${stat}
     `;
+    }
   }
 
   const defs = `
