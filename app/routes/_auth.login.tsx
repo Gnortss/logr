@@ -1,10 +1,52 @@
-import { useState } from "react";
-import { Form, useActionData, useNavigation } from "react-router";
+import { useEffect, useRef, useState } from "react";
+import { Form, useActionData, useLoaderData, useNavigation } from "react-router";
 import type { Route } from "./+types/_auth.login";
 import { getDb } from "~/lib/db.server";
 import { hashPassword, comparePassword, createToken, setSessionCookie, getSessionToken, verifyToken } from "~/lib/auth.server";
 import { users } from "~/db/schema";
 import { eq } from "drizzle-orm";
+
+const GSI_SRC = "https://accounts.google.com/gsi/client";
+
+interface GsiId {
+  initialize: (config: Record<string, unknown>) => void;
+  renderButton: (el: HTMLElement, options: Record<string, unknown>) => void;
+  prompt: () => void;
+}
+
+declare global {
+  interface Window {
+    google?: { accounts?: { id?: GsiId } };
+  }
+}
+
+function loadGsiScript(): Promise<GsiId> {
+  return new Promise((resolve, reject) => {
+    if (window.google?.accounts?.id) {
+      resolve(window.google.accounts.id);
+      return;
+    }
+    const existing = document.querySelector<HTMLScriptElement>(
+      `script[src="${GSI_SRC}"]`,
+    );
+    const onLoad = () => {
+      if (window.google?.accounts?.id) resolve(window.google.accounts.id);
+      else reject(new Error("GSI loaded without expected global"));
+    };
+    if (existing) {
+      existing.addEventListener("load", onLoad, { once: true });
+      existing.addEventListener("error", () => reject(new Error("GSI load failed")), { once: true });
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = GSI_SRC;
+    script.async = true;
+    script.defer = true;
+    script.onload = onLoad;
+    script.onerror = () => reject(new Error("GSI load failed"));
+    document.head.appendChild(script);
+  });
+}
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const token = getSessionToken(request);
@@ -16,7 +58,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       if (e instanceof Response) throw e;
     }
   }
-  return null;
+  const origin = new URL(request.url).origin;
+  return {
+    googleClientId: context.cloudflare.env.GOOGLE_CLIENT_ID,
+    googleLoginUri: `${origin}/auth/google/callback`,
+  };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -56,7 +102,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   if (intent === "login") {
     const user = await db.select().from(users).where(eq(users.email, email)).get();
-    if (!user || !(await comparePassword(password, user.passwordHash))) {
+    if (!user || !user.passwordHash || !(await comparePassword(password, user.passwordHash))) {
       return { error: "Invalid email or password." };
     }
     const token = await createToken({ userId: user.id, email: user.email }, jwtSecret);
@@ -73,13 +119,51 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function LoginPage() {
+  const { googleClientId, googleLoginUri } = useLoaderData<typeof loader>();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
+  const buttonRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadGsiScript()
+      .then((id) => {
+        if (cancelled || !buttonRef.current) return;
+        id.initialize({
+          client_id: googleClientId,
+          login_uri: googleLoginUri,
+          ux_mode: "redirect",
+          auto_select: true,
+          itp_support: true,
+        });
+        id.renderButton(buttonRef.current, {
+          type: "standard",
+          size: "large",
+          theme: "outline",
+          text: "continue_with",
+          shape: "rectangular",
+          logo_alignment: "left",
+        });
+        id.prompt();
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [googleClientId, googleLoginUri]);
 
   return (
     <>
+      <div ref={buttonRef} className="mb-6 flex justify-center" />
+
+      <div className="flex items-center gap-3 mb-6">
+        <div className="flex-1 h-px bg-surface-container-high" />
+        <span className="text-xs uppercase tracking-wide text-text-muted">or</span>
+        <div className="flex-1 h-px bg-surface-container-high" />
+      </div>
+
       <div className="flex mb-6 rounded-full overflow-hidden bg-surface-container-high">
         <button
           type="button"
