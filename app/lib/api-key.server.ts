@@ -63,6 +63,13 @@ export async function validateApiKey(
   return { userId: row.userId, keyId: row.id };
 }
 
+function unauthorizedResponse(message: string): Response {
+  return new Response(
+    JSON.stringify({ ok: false, error: { code: "UNAUTHORIZED", message } }),
+    { status: 401, headers: { "Content-Type": "application/json" } }
+  );
+}
+
 export async function requireApiKey(
   request: Request,
   db: Database
@@ -70,18 +77,12 @@ export async function requireApiKey(
   const authHeader = request.headers.get("Authorization") ?? "";
   const match = authHeader.match(/^Bearer\s+(.+)$/);
   if (!match) {
-    throw new Response(
-      JSON.stringify({ ok: false, error: { code: "UNAUTHORIZED", message: "Missing API key" } }),
-      { status: 401, headers: { "Content-Type": "application/json" } }
-    );
+    throw unauthorizedResponse("Missing API key");
   }
 
   const result = await validateApiKey(db, match[1]);
   if (!result) {
-    throw new Response(
-      JSON.stringify({ ok: false, error: { code: "UNAUTHORIZED", message: "Invalid API key" } }),
-      { status: 401, headers: { "Content-Type": "application/json" } }
-    );
+    throw unauthorizedResponse("Invalid API key");
   }
 
   return result;
