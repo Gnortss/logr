@@ -56,7 +56,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   if (intent === "login") {
     const user = await db.select().from(users).where(eq(users.email, email)).get();
-    if (!user || !(await comparePassword(password, user.passwordHash))) {
+    if (!user || !user.passwordHash || !(await comparePassword(password, user.passwordHash))) {
       return { error: "Invalid email or password." };
     }
     const token = await createToken({ userId: user.id, email: user.email }, jwtSecret);
