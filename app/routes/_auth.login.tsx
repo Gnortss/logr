@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Form, useActionData, useNavigation } from "react-router";
+import { Form, useActionData, useLoaderData, useNavigation } from "react-router";
 import type { Route } from "./+types/_auth.login";
 import { getDb } from "~/lib/db.server";
 import { hashPassword, comparePassword, createToken, setSessionCookie, getSessionToken, verifyToken } from "~/lib/auth.server";
@@ -16,7 +16,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       if (e instanceof Response) throw e;
     }
   }
-  return null;
+  const origin = new URL(request.url).origin;
+  return {
+    googleClientId: context.cloudflare.env.GOOGLE_CLIENT_ID,
+    googleLoginUri: `${origin}/auth/google/callback`,
+  };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -73,6 +77,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function LoginPage() {
+  const { googleClientId, googleLoginUri } = useLoaderData<typeof loader>();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
@@ -80,6 +85,32 @@ export default function LoginPage() {
 
   return (
     <>
+      <script src="https://accounts.google.com/gsi/client" async defer />
+
+      <div
+        id="g_id_onload"
+        data-client_id={googleClientId}
+        data-login_uri={googleLoginUri}
+        data-ux_mode="redirect"
+        data-auto_select="true"
+        data-itp_support="true"
+      />
+      <div
+        className="g_id_signin mb-6 flex justify-center"
+        data-type="standard"
+        data-size="large"
+        data-theme="outline"
+        data-text="continue_with"
+        data-shape="rectangular"
+        data-logo_alignment="left"
+      />
+
+      <div className="flex items-center gap-3 mb-6">
+        <div className="flex-1 h-px bg-surface-container-high" />
+        <span className="text-xs uppercase tracking-wide text-text-muted">or</span>
+        <div className="flex-1 h-px bg-surface-container-high" />
+      </div>
+
       <div className="flex mb-6 rounded-full overflow-hidden bg-surface-container-high">
         <button
           type="button"
