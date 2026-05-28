@@ -15,6 +15,20 @@
       "when": 1774773828579,
       "tag": "0001_tidy_roulette",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1779976075155,
+      "tag": "0002_add_weekly_target",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1779976099837,
+      "tag": "0003_google_login",
+      "breakpoints": true
     }
   ]
 }
