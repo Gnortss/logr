@@ -50,7 +50,8 @@ describe("computeCurrentStreak", () => {
   });
 
   it("returns 0 when today is missing and yesterday is missing", () => {
-    expect(computeCurrentStreak([], "2026-05-27", (v) => v === 1)).toBe(0);
+    const entries = [{ date: "2026-05-24", value: 1 }]; // gap at both -1 and 0
+    expect(computeCurrentStreak(entries, "2026-05-27", (v) => v === 1)).toBe(0);
   });
 
   it("works with custom predicate (numeric goal)", () => {
