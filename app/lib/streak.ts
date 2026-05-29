@@ -16,7 +16,7 @@ export function computeCurrentStreak(
   }
 
   let streak = 0;
-  let cursor = todayDate;
+  let cursor = successByDate.get(todayDate) === true ? todayDate : addDays(todayDate, -1);
   while (successByDate.get(cursor) === true) {
     streak++;
     cursor = addDays(cursor, -1);
