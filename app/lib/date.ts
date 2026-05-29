@@ -44,3 +44,7 @@ export function formatDayAbbr(dateStr: string): string {
 export function formatDayNum(dateStr: string): number {
   return parseInt(dateStr.split("-")[2], 10);
 }
+
+export function startOfYear(dateStr: string): string {
+  return `${dateStr.slice(0, 4)}-01-01`;
+}
