@@ -80,9 +80,9 @@ function dayBox(x: number, y: number, state: DayState, isToday: boolean, mode: "
       : ' stroke-dasharray="2 2" opacity="0.5"';
   }
   const today = isToday
-    ? `<rect x="${x - 2}" y="${y - 2}" width="${size + 4}" height="${size + 4}" rx="${radius + 1}" fill="none" stroke="${c.primaryContainer}" stroke-width="2"/>`
+    ? `<rect x="${x - 2}" y="${y - 2}" width="${size + 4}" height="${size + 4}" rx="${radius + 1}" fill="none" stroke="${c.primaryContainer}" stroke-width="3"/>`
     : "";
-  return `${today}<rect x="${x}" y="${y}" width="${size}" height="${size}" rx="${radius}" fill="${fill}" stroke="${stroke}" stroke-width="1"${extra}/>`;
+  return `${today}<rect x="${x}" y="${y}" width="${size}" height="${size}" rx="${radius}" fill="${fill}" stroke="${stroke}" stroke-width="2"${extra}/>`;
 }
 
 function weekDots(x: number, y: number, m: DashboardMetric, mode: "color" | "bw"): string {
@@ -123,8 +123,8 @@ function statBlock(x: number, y: number, m: DashboardMetric, mode: "color" | "bw
   }
   const valueColor = m.status === "met" ? c.success : c.text;
   return `
-    <text x="${x}" y="${y + 8}" font-family="JetBrainsMono Bold, ui-monospace, monospace" font-size="11" font-weight="700" fill="${valueColor}" text-anchor="end">${esc(value)}</text>
-    <text x="${x}" y="${y + 17}" font-family="Inter, system-ui, sans-serif" font-size="7" font-weight="600" fill="${c.textMuted}" text-anchor="end" letter-spacing="0.3">${esc(label.toUpperCase())}</text>
+    <text x="${x}" y="${y + 10}" font-family="JetBrainsMono Bold, ui-monospace, monospace" font-size="14" font-weight="700" fill="${valueColor}" text-anchor="end">${esc(value)}</text>
+    <text x="${x}" y="${y + 21}" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="600" fill="${c.textMuted}" text-anchor="end" letter-spacing="0.3">${esc(label.toUpperCase())}</text>
   `;
 }
 
@@ -133,26 +133,26 @@ export function renderDashboardSvg(data: DashboardData, opts: RenderOpts): strin
   const w = 400, h = 300;
 
   const header = `
-    <text x="14" y="22" font-family="Inter, system-ui, sans-serif" font-size="12" font-weight="600" fill="${c.text}">${esc(formatDateLong(data.date))}</text>
-    <text x="${w - 14}" y="22" font-family="ui-monospace, monospace" font-size="10" fill="${c.textMuted}" text-anchor="end">Wk ${data.weekNumber}</text>
+    <text x="14" y="22" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="${c.text}">${esc(formatDateLong(data.date))}</text>
+    <text x="${w - 14}" y="22" font-family="ui-monospace, monospace" font-size="12" fill="${c.textMuted}" text-anchor="end">Wk ${data.weekNumber}</text>
   `;
 
-  const heroX = 12, heroY = 32, heroW = w - 24, heroH = 80;
+  const heroX = 12, heroY = 32, heroW = w - 24, heroH = 90;
   const heroFill = opts.mode === "color" ? c.primaryFixed : "#ffffff";
   const heroStroke = opts.mode === "bw" ? c.outline : "none";
 
-  const heroLabel = `<text x="${heroX + 12}" y="${heroY + 16}" font-family="Inter, system-ui, sans-serif" font-size="8" font-weight="700" fill="${c.primaryContainer}" letter-spacing="0.6">WEEKLY PROGRESS</text>`;
+  const heroLabel = `<text x="${heroX + 12}" y="${heroY + 20}" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="${c.primaryContainer}" letter-spacing="0.6">WEEKLY PROGRESS</text>`;
   const heroBig = `
-    <text x="${heroX + 12}" y="${heroY + 50}" font-family="JetBrainsMono Bold, ui-monospace, monospace" font-size="36" font-weight="800" fill="${c.primaryContainer}">${data.hero.done}<tspan font-size="16" fill="${c.textMuted}">/${data.hero.total}</tspan></text>
+    <text x="${heroX + 12}" y="${heroY + 55}" font-family="JetBrainsMono Bold, ui-monospace, monospace" font-size="40" font-weight="800" fill="${c.primaryContainer}">${data.hero.done}<tspan font-size="20" fill="${c.textMuted}">/${data.hero.total}</tspan></text>
   `;
-  const heroSub = `<text x="${heroX + 12}" y="${heroY + 68}" font-family="ui-monospace, monospace" font-size="9" fill="${c.textMuted}">${data.hero.onTrackCount} of ${data.hero.totalGoals} on track</text>`;
+  const heroSub = `<text x="${heroX + 12}" y="${heroY + 78}" font-family="ui-monospace, monospace" font-size="11" fill="${c.textMuted}">${data.hero.onTrackCount} of ${data.hero.totalGoals} on track</text>`;
 
-  const dayBoxesX = heroX + heroW - 12 - (7 * 20 + 6 * 4);
-  const dayBoxesY = heroY + 28;
+  const dayBoxesX = heroX + heroW - 12 - (7 * 20 + 6 * 8);
+  const dayBoxesY = heroY + 30;
   let dayBoxes = "";
   for (let i = 0; i < 7; i++) {
-    const bx = dayBoxesX + i * 24;
-    dayBoxes += `<text x="${bx + 10}" y="${dayBoxesY - 5}" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="600" fill="${c.textMuted}" text-anchor="middle">${dayLetters()[i]}</text>`;
+    const bx = dayBoxesX + i * 28;
+    dayBoxes += `<text x="${bx + 10}" y="${dayBoxesY - 5}" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="${c.textMuted}" text-anchor="middle">${dayLetters()[i]}</text>`;
     dayBoxes += dayBox(bx, dayBoxesY, data.hero.dayStates[i], i === data.todayIndex, opts.mode);
   }
 
@@ -162,8 +162,8 @@ export function renderDashboardSvg(data: DashboardData, opts: RenderOpts): strin
   `;
 
   const rowsStartY = heroY + heroH + 8;
-  const rowH = 28;
-  const rowGap = 3;
+  const rowH = 32;
+  const rowGap = 2;
   const rowX = 12;
   const rowW = w - 24;
   let rows = "";
@@ -180,10 +180,10 @@ export function renderDashboardSvg(data: DashboardData, opts: RenderOpts): strin
         : m.type === "boolean" ? " · daily"
         : m.goal != null ? ` · ${m.goal}${m.unit ? ` ${m.unit}` : ""}`
         : m.unit ? ` · ${m.unit}` : "";
-      const nameText = `<text x="${rowX + 9}" y="${ry + 18}" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="600" fill="${c.text}">${esc(m.name)}<tspan fill="${c.textMuted}" font-weight="500">${esc(target)}</tspan></text>`;
+      const nameText = `<text x="${rowX + 9}" y="${ry + 20}" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="${c.text}">${esc(m.name)}<tspan fill="${c.textMuted}" font-weight="500">${esc(target)}</tspan></text>`;
       const dotsX = rowX + rowW - 44 - 88;
-      const dots = weekDots(dotsX, ry + 10, m, opts.mode);
-      const stat = statBlock(rowX + rowW - 8, ry + 3, m, opts.mode);
+      const dots = weekDots(dotsX, ry + 12, m, opts.mode);
+      const stat = statBlock(rowX + rowW - 8, ry + 4, m, opts.mode);
       rows += `
       <rect x="${rowX}" y="${ry}" width="${rowW}" height="${rowH}" rx="7" fill="${c.card}" stroke="${c.outline}" stroke-width="1"/>
       ${nameText}${dots}${stat}
